@@ -17,22 +17,22 @@ export TestName
 
 start_test
 
+backup_log=$tmp/rerun-backup.out
 rerun_log=$tmp/rerun.out
 JobName=backup-bareos-fd
 
-rm -f $rerun_log
+rm -f "$backup_log" "$rerun_log"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $rerun_log
+@$out $backup_log
 setdebug level=100 storage=File
 run job=$JobName yes
+wait
 run job=$JobName yes
 wait
-rerun jobid=1 yes
-wait
-rerun jobid=2,3 yes
+run job=$JobName yes
 wait
 messages
 quit
@@ -40,15 +40,43 @@ END_OF_DATA
 
 run_bconsole
 
-expect_grep "rerunning jobid 1" \
+first_jobid=$("${AWK}" -F= \
+  '/Job queued. JobId=/{gsub("\r", "", $2); print $2; exit}' \
+  "$backup_log")
+second_jobid=$("${AWK}" -F= \
+  '/Job queued. JobId=/{gsub("\r", "", $2); if (++count == 2) {print $2; exit}}' \
+  "$backup_log")
+third_jobid=$("${AWK}" -F= \
+  '/Job queued. JobId=/{gsub("\r", "", $2); if (++count == 3) {print $2; exit}}' \
+  "$backup_log")
+
+if [[ -z "$first_jobid" || -z "$second_jobid" || -z "$third_jobid" ]]; then
+  set_error "Could not determine all backup jobids."
+fi
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $rerun_log
+rerun jobid=${first_jobid} yes
+wait
+rerun jobid=${second_jobid},${third_jobid} yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "rerunning jobid ${first_jobid}" \
   "$rerun_log" \
   "Job was not rerun."
 
-expect_grep "rerunning jobid 2" \
+expect_grep "rerunning jobid ${second_jobid}" \
   "$rerun_log" \
   "Comma separated jobs were not correctly rerun."
 
-expect_grep "rerunning jobid 3" \
+expect_grep "rerunning jobid ${third_jobid}" \
   "$rerun_log" \
   "Comma separated jobs were not correctly rerun."
 

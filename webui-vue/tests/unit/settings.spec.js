@@ -110,4 +110,242 @@ describe('settings store', () => {
     expect(restored.getTableRowsPerPage('jobs.list', 15)).toBe(33)
     expect(restored.getTableRowsPerPage('storages.pools', 15)).toBe(11)
   })
+
+  it('persists and restores table sort settings', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableSort: {
+          'jobs.defs': { sortBy: 'type', descending: true },
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableSort: {
+        'jobs.defs': { sortBy: 'enabled', descending: false },
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableSort('jobs.defs', { sortBy: 'name', descending: true }))
+      .toEqual({ sortBy: 'enabled', descending: false })
+  })
+
+  it('validates cleared and malformed sort settings on import', () => {
+    const settings = useSettingsStore()
+    settings.importSettings({ tableSort: {
+      cleared: { sortBy: null, descending: 'invalid' },
+      missing: { descending: true },
+      empty: { sortBy: '', descending: true },
+      invalid: { sortBy: 42, descending: true },
+    } })
+    const fallback = { sortBy: 'name', descending: true }
+    expect(settings.getTableSort('cleared', fallback)).toEqual({ sortBy: null, descending: false })
+    for (const key of ['missing', 'empty', 'invalid']) {
+      expect(settings.getTableSort(key, fallback)).toEqual(fallback)
+    }
+  })
+
+  it('persists and restores table filter (search) settings', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableFilter('storages.volumes', 'LTO-1')
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableFilter: {
+          'storages.volumes': 'LTO-1',
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableFilter: {
+        'storages.volumes': 'LTO-2',
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableFilter('storages.volumes', '')).toBe('LTO-2')
+
+    restored.setTableFilter('storages.volumes', '')
+    expect(restored.getTableFilter('storages.volumes', '')).toBe('')
+  })
+
+  it('persists and restores the schedules calendar view mode', async () => {
+    const settings = useSettingsStore()
+
+    settings.setSchedulesViewMode('month')
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        schedulesViewMode: 'month',
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      schedulesViewMode: 'invalid',
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.schedulesViewMode).toBe('week')
+  })
+
+  it('persists and restores hidden table columns', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableHiddenColumns('storages.pools', ['maxvoljobs', 'maxvolbytes'])
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableHiddenColumns: {
+          'storages.pools': ['maxvoljobs', 'maxvolbytes'],
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableHiddenColumns: {
+        'storages.pools': ['maxvoljobs'],
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableHiddenColumns('storages.pools', [])).toEqual(['maxvoljobs'])
+
+    restored.setTableHiddenColumns('storages.pools', [])
+    expect(restored.getTableHiddenColumns('storages.pools', [])).toEqual([])
+  })
+
+  it('persists and restores the client backup warning threshold', async () => {
+    const settings = useSettingsStore()
+
+    settings.clientBackupWarningFailedJobs = 3
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        clientBackupWarningFailedJobs: 3,
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      clientBackupWarningFailedJobs: 7,
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.clientBackupWarningFailedJobs).toBe(7)
+  })
+
+  it('exportSettings() excludes login-only and obsolete restore defaults', () => {
+    const settings = useSettingsStore()
+    settings.loginUsername = 'alice'
+
+    const snapshot = settings.exportSettings()
+
+    expect(snapshot).not.toHaveProperty('loginUsername')
+    expect(snapshot).not.toHaveProperty('restoreMergeJobs')
+    expect(snapshot).not.toHaveProperty('restoreMergeFilesets')
+    expect(snapshot).toEqual(expect.objectContaining({
+      refreshInterval: settings.refreshInterval,
+      darkMode: settings.darkMode,
+      directorName: settings.directorName,
+      clientBackupWarningFailedJobs: settings.clientBackupWarningFailedJobs,
+    }))
+  })
+
+  it('exports a detached serialisable snapshot of nested settings', () => {
+    const settings = useSettingsStore()
+    settings.setSelectedDirectors(['dir-a'])
+    settings.setTableRowsPerPage('jobs', 25)
+    settings.setTableSort('jobs', { sortBy: 'name', descending: false })
+    settings.setTableFilter('jobs', 'query')
+    settings.setTableHiddenColumns('jobs', ['status'])
+    settings.setTableFlag('jobs', true)
+    const snapshot = settings.exportSettings()
+    expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot)
+
+    snapshot.selectedDirectors.push('dir-b')
+    snapshot.tableRowsPerPage.jobs = 50
+    snapshot.tableSort.jobs.sortBy = 'type'
+    snapshot.tableFilter.jobs = 'other'
+    snapshot.tableHiddenColumns.jobs.push('name')
+    snapshot.tableFlags.jobs = false
+    expect(settings.selectedDirectors).toEqual(['dir-a'])
+    expect(settings.getTableRowsPerPage('jobs')).toBe(25)
+    expect(settings.getTableSort('jobs')).toEqual({ sortBy: 'name', descending: false })
+    expect(settings.getTableFilter('jobs')).toBe('query')
+    expect(settings.getTableHiddenColumns('jobs')).toEqual(['status'])
+    expect(settings.getTableFlag('jobs')).toBe(true)
+
+    settings.selectedDirectors.push('dir-c')
+    settings.tableSort.jobs.descending = true
+    settings.tableHiddenColumns.jobs.push('level')
+    expect(snapshot.selectedDirectors).toEqual(['dir-a', 'dir-b'])
+    expect(snapshot.tableSort.jobs.descending).toBe(false)
+    expect(snapshot.tableHiddenColumns.jobs).toEqual(['status', 'name'])
+  })
+
+  it('importSettings() applies a previously exported snapshot', () => {
+    const settings = useSettingsStore()
+    settings.refreshInterval = 60
+    settings.darkMode = true
+    settings.setSelectedDirectors(['dir-a', 'dir-b'])
+    settings.setTableRowsPerPage('jobs.list', 42)
+    settings.setTableSort('jobs.defs', { sortBy: 'name', descending: false })
+    settings.setTableFilter('storages.volumes', 'LTO-1')
+    settings.clientBackupWarningFailedJobs = 4
+    const snapshot = settings.exportSettings()
+
+    // Change everything, then restore from the snapshot.
+    settings.refreshInterval = 5
+    settings.darkMode = false
+    settings.setSelectedDirectors(['other-dir'])
+    settings.setTableRowsPerPage('jobs.list', 5)
+    settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
+    settings.setTableFilter('storages.volumes', 'other')
+    settings.clientBackupWarningFailedJobs = 9
+
+    settings.importSettings(snapshot)
+
+    expect(settings.refreshInterval).toBe(60)
+    expect(settings.darkMode).toBe(true)
+    expect(settings.selectedDirectors).toEqual(['dir-a', 'dir-b'])
+    expect(settings.getTableRowsPerPage('jobs.list', 0)).toBe(42)
+    expect(settings.getTableSort('jobs.defs', {}))
+      .toEqual({ sortBy: 'name', descending: false })
+    expect(settings.getTableFilter('storages.volumes', '')).toBe('LTO-1')
+    expect(settings.clientBackupWarningFailedJobs).toBe(4)
+  })
+
+  it('importSettings() leaves unspecified fields untouched and rejects non-object data', () => {
+    const settings = useSettingsStore()
+    settings.darkMode = true
+
+    settings.importSettings({ refreshInterval: 45 })
+
+    expect(settings.refreshInterval).toBe(45)
+    expect(settings.darkMode).toBe(true)
+
+    expect(() => settings.importSettings(null)).toThrow()
+    expect(() => settings.importSettings(['not', 'an', 'object'])).toThrow()
+  })
 })

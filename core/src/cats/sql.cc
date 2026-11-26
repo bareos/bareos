@@ -141,7 +141,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   // jobs share a connection otherwise
   if (!BatchInsertAvailable()) return true;
 
-  struct max_connections_context context{};
+  struct max_connections_context context {};
   PoolMem query(PM_MESSAGE);
 
   // Check max_connections setting
@@ -421,6 +421,7 @@ void BareosDb::ListDashes(OutputFormatter* send)
   for (int i = 0; i < num_fields; i++) {
     field = SqlFetchField();
     if (!field) { break; }
+    if (send->IsHiddenColumn(i)) { continue; }
     len = MaxLength(field->max_length + 2);
     for (int j = 0; j < len; j++) { send->Decoration("-"); }
     send->Decoration("+");
@@ -581,8 +582,7 @@ int BareosDb::ListResult(void* vctx, int, char** row)
           value.bsprintf(" %-*s |", max_len, row[i]);
         }
 
-        // Use value format string to send preformated value.
-        send->ObjectKeyValue(field->name, row[i], value.c_str());
+        send->ObjectKeyValuePreformatted(field->name, row[i], value.c_str());
       }
       send->Decoration("\n");
       break;
@@ -609,12 +609,13 @@ int BareosDb::ListResult(void* vctx, int, char** row)
             value.bsprintf("%s\n", row[i]);
           }
 
+        } else {
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", row[i]);
         }
 
-        // Use value format string to send preformated value.
-        send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
+        key.strcat(value.c_str());
+        send->ObjectKeyValuePreformatted(field->name, row[i], key.c_str());
       }
       send->Decoration("\n");
       break;
@@ -710,6 +711,9 @@ int BareosDb::ListResult(JobControlRecord* jcr,
    * We use this to shortcut for calling the FilterData() method in the
    * OutputFormatter class. */
   filters_enabled = send->HasFilters();
+  auto include_row = [&](char** current_row) {
+    return !filters_enabled || send->FilterData(current_row);
+  };
 
   switch (type) {
     case E_LIST_INIT:
@@ -719,7 +723,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -772,7 +776,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -801,12 +805,9 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
           }
-          if (i == num_fields - 1) { value.strcat("\n"); }
-
-          // Use value format string to send preformated value
-          send->ObjectKeyValue(field->name, row[i], value.c_str());
+          send->ObjectKeyValuePreformatted(field->name, row[i], value.c_str());
         }
-        send->ObjectEnd();
+        send->ObjectEnd("row", "\n");
       }
       ListDashes(send);
       break;
@@ -814,7 +815,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
       Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -844,8 +845,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             value.bsprintf("%s\n", row[i]);
           }
 
-          // Use value format string to send preformated value
-          send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
+          key.strcat(value.c_str());
+          send->ObjectKeyValuePreformatted(field->name, row[i], key.c_str());
         }
         send->Decoration("\n");
         send->ObjectEnd();

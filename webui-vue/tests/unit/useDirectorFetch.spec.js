@@ -43,6 +43,7 @@ describe('director data normalisers', () => {
       jobid: '42',
       name: 'BackupClient1',
       clientname: 'bareos-fd',
+      fileset: 'SelfTest',
       jobtype: 'B',
       joblevel: 'F',
       jobstatus: 'T',
@@ -52,10 +53,12 @@ describe('director data normalisers', () => {
       jobfiles: '48231',
       jobbytes: '2147483648',
       joberrors: '0',
+      comment: 'weekly offsite',
     })).toEqual({
       id: 42,
       name: 'BackupClient1',
       client: 'bareos-fd',
+      fileset: 'SelfTest',
       type: 'B',
       level: 'F',
       status: 'T',
@@ -65,6 +68,7 @@ describe('director data normalisers', () => {
       files: 48231,
       bytes: 2147483648,
       errors: 0,
+      comment: 'weekly offsite',
     })
   })
 
@@ -144,6 +148,7 @@ describe('director data normalisers', () => {
       VolRetention: '365 days',
       Slot: '8',
       enabled: true,
+      Comment: 'offsite',
     })).toEqual({
       volumename: 'Full-0001',
       pool: 'Full',
@@ -160,6 +165,7 @@ describe('director data normalisers', () => {
       retention: '365 days',
       slot: 8,
       enabled: true,
+      comment: 'offsite',
     })
   })
 

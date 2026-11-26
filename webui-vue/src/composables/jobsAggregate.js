@@ -25,11 +25,21 @@ import { createDirectorCommandClient } from './directorAggregate.js'
 import {
   buildListJobsCommand,
   buildListJobsCountCommand,
-  filterJobsBySearch,
+  buildListRecentJobsCommand,
+  buildListRecentJobsCountCommand,
+  MAX_JOBS_FETCH_LIMIT,
   normaliseJobStatusFilters,
   normaliseJobsSearchTerm,
   paginateJobs,
+  resolveJobsSortColumn,
 } from '../utils/jobs.js'
+
+export { MAX_JOBS_FETCH_LIMIT }
+
+export function resolveCompatibleJobsSortColumn(sortBy) {
+  if (['name', 'client', 'type', 'level', 'status'].includes(sortBy)) return null
+  return resolveJobsSortColumn(sortBy)
+}
 
 function numberValue(value) {
   const number = Number(value ?? 0)
@@ -161,14 +171,21 @@ export async function fetchAggregatedJobsPage(
   clientFilter = '',
   searchTerm = '',
 ) {
-  const { page = 1, rowsPerPage = 25 } = pagination ?? {}
+  const { page = 1, rowsPerPage = 25, sortBy = 'id', descending = true } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
   const statusFilters = normaliseJobStatusFilters(statusFilter)
   const filters = statusFilters.length > 0 ? statusFilters : ['']
-  const useDefaultSorting = usesDefaultJobsSorting(pagination)
   const normalizedSearchTerm = normaliseJobsSearchTerm(searchTerm)
-  const fetchAllJobs = rowsPerPage === 0 || !useDefaultSorting || normalizedSearchTerm !== ''
+  // Columns with a real catalog equivalent (the `sortby=` whitelist in
+  // core/src/cats/sql_list.cc) are sorted and search-filtered on each
+  // director itself, so only the top `offset + rowsPerPage` rows per
+  // director need to be fetched before the final client-side merge across
+  // directors. `duration`/`speed` (derived client-side) have no
+  // server-side equivalent, and `rowsPerPage === 0` ("All") has no bounded
+  // `offset + rowsPerPage` to request in the first place -- both fall back
+  // to a capped, client-sorted fetch per director.
+  const serverSortColumn = rowsPerPage > 0 ? resolveCompatibleJobsSortColumn(sortBy) : null
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -181,7 +198,7 @@ export async function fetchAggregatedJobsPage(
       let countResults
       let directorStatusResult
 
-      if (useDefaultSorting && !fetchAllJobs) {
+      if (serverSortColumn) {
         [jobsResults, countResults, directorStatusResult] = await Promise.all([
           Promise.allSettled(filters.map(currentStatusFilter => (
             client.call(buildListJobsCommand({
@@ -192,6 +209,9 @@ export async function fetchAggregatedJobsPage(
               typeFilter,
               jobFilter,
               clientFilter,
+              sortColumn: serverSortColumn,
+              descending,
+              searchTerm: normalizedSearchTerm,
             }))
           ))),
           Promise.allSettled(filters.map(currentStatusFilter => (
@@ -201,6 +221,7 @@ export async function fetchAggregatedJobsPage(
               typeFilter,
               jobFilter,
               clientFilter,
+              searchTerm: normalizedSearchTerm,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
@@ -214,38 +235,22 @@ export async function fetchAggregatedJobsPage(
               typeFilter,
               jobFilter,
               clientFilter,
+              searchTerm: normalizedSearchTerm,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
         ])
 
-        jobsResults = await Promise.allSettled(filters.map((currentStatusFilter, index) => {
-          const countResult = countResults[index]
-          if (countResult?.status === 'fulfilled') {
-            const count = numberValue(directorCollection(countResult.value?.jobs)[0]?.count)
-            if (count === 0) {
-              return Promise.resolve({ jobs: [] })
-            }
-
-            return client.call(buildListJobsCommand({
-              limit: fetchAllJobs ? count : fetchLimit,
-              offset: 0,
-              statusFilter: currentStatusFilter,
-              levelFilter,
-              typeFilter,
-              jobFilter,
-              clientFilter,
-            }))
-          }
-
+        jobsResults = await Promise.allSettled(filters.map((currentStatusFilter) => {
           return client.call(buildListJobsCommand({
-            limit: fetchLimit,
+            limit: MAX_JOBS_FETCH_LIMIT,
             offset: 0,
             statusFilter: currentStatusFilter,
             levelFilter,
             typeFilter,
             jobFilter,
             clientFilter,
+            searchTerm: normalizedSearchTerm,
           }))
         }))
       }
@@ -255,11 +260,13 @@ export async function fetchAggregatedJobsPage(
         throw rejectedJobsResult.reason
       }
 
-      const jobs = sortJobsByPagination(overlayRuntimeStatuses(jobsResults.flatMap((result) => (
+      const fetchedJobs = jobsResults.flatMap((result) => (
         result.status === 'fulfilled'
           ? decorateJobs(result.value?.jobs, director)
           : []
-      )), decorateRuntimeJobs(
+      ))
+      const uniqueJobs = [...new Map(fetchedJobs.map(job => [job.scopeKey, job])).values()]
+      const jobs = sortJobsByPagination(overlayRuntimeStatuses(uniqueJobs, decorateRuntimeJobs(
         directorStatusResult[0]?.status === 'fulfilled'
           ? directorStatusResult[0].value?.running
           : []
@@ -267,17 +274,34 @@ export async function fetchAggregatedJobsPage(
       const count = countResults.reduce((sum, result, index) => (
         sum + (
           result.status === 'fulfilled'
-            ? numberValue(directorCollection(result.value?.jobs)[0]?.count)
+            ? Math.max(numberValue(directorCollection(result.value?.jobs)[0]?.count),
+              directorCollection(jobsResults[index]?.value?.jobs).length)
             : numberValue(directorCollection(
               jobsResults[index]?.status === 'fulfilled' ? jobsResults[index].value?.jobs : []
             ).length)
         )
-      ), 0)
+      ), 0) - (fetchedJobs.length - uniqueJobs.length)
 
+      const knownTruncated = !serverSortColumn && countResults.some(result => (
+        result.status === 'fulfilled'
+        && numberValue(directorCollection(result.value?.jobs)[0]?.count) > MAX_JOBS_FETCH_LIMIT
+      ))
+      const unknownCompleteness = !serverSortColumn
+        && (countResults.some(result => result.status === 'rejected')
+          || jobsResults.some(result => directorCollection(result.value?.jobs).length >= MAX_JOBS_FETCH_LIMIT))
       return {
         director,
         jobs,
         count,
+        truncated: knownTruncated ? true : unknownCompleteness ? null : false,
+        countErrors: countResults.flatMap(result => (
+          result.status === 'rejected'
+            ? [{
+              director,
+              message: `Failed to count jobs: ${result.reason?.message ?? 'Unknown error.'}`,
+            }]
+            : []
+        )),
       }
     } finally {
       client.disconnect()
@@ -286,19 +310,154 @@ export async function fetchAggregatedJobsPage(
 
   const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
   const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
-  const filteredJobs = filterJobsBySearch(jobs, normalizedSearchTerm)
-  const totalJobs = normalizedSearchTerm !== ''
-    ? filteredJobs.length
-    : successful.reduce((sum, result) => sum + numberValue(result.count), 0)
+  const totalJobs = successful.reduce((sum, result) => sum + numberValue(result.count), 0)
 
   return {
-    jobs: paginateJobs(filteredJobs, pagination),
+    jobs: paginateJobs(jobs, pagination),
     totalJobs,
+    browsableJobs: serverSortColumn ? totalJobs : jobs.length,
+    // A failed count leaves capped-fetch completeness unknown, unless another
+    // director is already known to be truncated.
+    truncated: successful.some(result => result.truncated === true)
+      ? true
+      : successful.some(result => result.truncated === null) ? null : false,
     directorErrors: results.flatMap((result, index) => (
       result.status === 'rejected'
         ? [{
           director: directors[index],
           message: result.reason?.message ?? 'Failed to load jobs.',
+        }]
+        : result.value.countErrors
+    )),
+  }
+}
+
+export async function fetchAggregatedRecentJobsPage(credentials, directors, pagination) {
+  const { page = 1, rowsPerPage = 25, sortBy = 'id', descending = true } = pagination ?? {}
+  const offset = Math.max(0, (page - 1) * rowsPerPage)
+  const fetchLimit = offset + rowsPerPage
+  const serverSortColumn = rowsPerPage > 0 ? resolveCompatibleJobsSortColumn(sortBy) : null
+
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const [jobsResult, countResult, directorStatusResult] = await Promise.all([
+        client.call(buildListRecentJobsCommand({
+          limit: serverSortColumn ? fetchLimit : MAX_JOBS_FETCH_LIMIT,
+          sortColumn: serverSortColumn,
+          descending,
+        })),
+        Promise.allSettled([client.call(buildListRecentJobsCountCommand())]),
+        Promise.allSettled([client.call('status director')]),
+      ])
+      const jobs = sortJobsByPagination(overlayRuntimeStatuses(
+        decorateJobs(jobsResult?.jobs, director),
+        decorateRuntimeJobs(
+          directorStatusResult[0]?.status === 'fulfilled'
+            ? directorStatusResult[0].value?.running
+            : []
+        )
+      ), pagination)
+      const count = countResult[0].status === 'fulfilled'
+        ? Math.max(numberValue(directorCollection(countResult[0].value?.jobs)[0]?.count), jobs.length)
+        : jobs.length
+
+      return {
+        director,
+        jobs,
+        count,
+        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT
+          ? true
+          : countResult[0].status === 'rejected'
+            || (!serverSortColumn && jobs.length >= MAX_JOBS_FETCH_LIMIT)
+            ? null : false,
+        countErrors: countResult[0].status === 'rejected'
+          ? [{ director, message: `Failed to count jobs: ${countResult[0].reason?.message ?? 'Unknown error.'}` }]
+          : [],
+      }
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
+  const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
+
+  return {
+    jobs: paginateJobs(jobs, pagination),
+    totalJobs: successful.reduce((sum, result) => sum + result.count, 0),
+    truncated: successful.some(result => result.truncated === true)
+      ? true : successful.some(result => result.truncated === null) ? null : false,
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load recent jobs.',
+        }]
+        : result.value.countErrors
+    )),
+  }
+}
+
+export async function fetchAggregatedTroubleJobs(
+  credentials,
+  directors,
+  { days = 1, limit = 200, statusFilter = ['W', 'E', 'f', 'A'] } = {}
+) {
+  const safeLimit = Math.max(0, limit)
+
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const [jobsResult, countResult] = await Promise.all([
+        client.call(buildListJobsCommand({
+          limit: safeLimit,
+          offset: 0,
+          days,
+          statusFilter,
+          sortColumn: 'jobid',
+          descending: true,
+        })),
+        client.call(buildListJobsCountCommand({
+          days,
+          statusFilter,
+        })),
+      ])
+
+      return {
+        director,
+        jobs: decorateJobs(jobsResult?.jobs, director),
+        count: numberValue(directorCollection(countResult?.jobs)[0]?.count),
+      }
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
+  const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), {
+    sortBy: 'id',
+    descending: true,
+  })
+  const totalJobs = successful.reduce((sum, result) => sum + result.count, 0)
+
+  return {
+    jobs: jobs.slice(0, safeLimit),
+    totalJobs,
+    truncated: totalJobs > safeLimit,
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load trouble jobs.',
         }]
         : []
     )),

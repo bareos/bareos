@@ -30,7 +30,6 @@ Environment variables (all optional):
 
 import logging
 import os
-import sys
 import unittest
 
 from selenium import webdriver
@@ -42,6 +41,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+# BEGIN source-only screenshot import
+import sys
+
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
+    )
+)
+from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
+
+# END source-only screenshot import
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,7 +62,7 @@ logger = logging.getLogger(__name__)
 TIMEOUT = 15
 
 
-class SeleniumVueTest(unittest.TestCase):
+class SeleniumVueTest(ScreenshotTestCase):
     base_url = "http://127.0.0.1/bareos-webui"
     username = "admin"
     password = "admin"
@@ -191,7 +201,9 @@ class SeleniumVueTest(unittest.TestCase):
         self.by_testid("nav-restore").click()
         self.wait_for_url("#/restore")
         self.wait_for(
-            By.CSS_SELECTOR, '[data-testid="restore-source-client"]', timeout=20
+            By.XPATH,
+            '//*[@data-testid="restore-source-client"]/ancestor::label[contains(@class, "q-field")]',
+            timeout=20,
         )
 
 
@@ -218,4 +230,4 @@ def configure_from_env():
 
 if __name__ == "__main__":
     configure_from_env()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, testRunner=ScreenshotRunner)

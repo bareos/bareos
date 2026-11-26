@@ -1,5 +1,15 @@
 <template>
-  <q-badge :color="info.color" :label="info.label" />
+  <q-badge
+    :color="info.color"
+    :label="info.label"
+    :class="{ 'cursor-pointer': clickable }"
+    :tabindex="clickable ? 0 : undefined"
+    v-bind="clickable ? { role: 'button', 'aria-label': `${info.label}: ${t('Jump to log')}` } : {}"
+    :title="clickable ? t('Jump to log') : undefined"
+    @click="clickable && $emit('click', $event)"
+    @keydown.enter="clickable && $emit('click', $event)"
+    @keydown.space.prevent="clickable && $emit('click', $event)"
+  />
 </template>
 
 <script setup>
@@ -8,7 +18,9 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   status: { type: String, required: true },
+  clickable: { type: Boolean, default: false },
 })
+defineEmits(['click'])
 const { t } = useI18n()
 
 const info = computed(() => ({

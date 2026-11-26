@@ -4,7 +4,7 @@ This test checks the Bareos WebUI by using seleniums webdriver.
 
 ## Requirements
 
-  * Python >= 2.7
+  * Python >= 3.7
   * Selenium >= 3.4.0
   * chromedriver for Chrome/Chromium testing, geckodriver for Firefox testing.
 
@@ -59,3 +59,13 @@ python webui-php-selenium-test.py -v SeleniumTest.test_run_default_job
 ## Debugging
 
 After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `webui-php-selenium-test.py` file.
+
+PHP and Vue browser tests use `ScreenshotTestCase` with `ScreenshotRunner`
+from the shared `selenium_screenshots.py` helper. RPM and Debian packages embed
+the helper in each Selenium test script so it can be copied and run on its own.
+Setup, test and subtest exceptions trigger screenshots before browser teardown,
+including on Python 3.10, where result callbacks run after cleanups. Artifacts
+are written below
+`${BAREOS_BROWSER_ARTIFACTS_DIR:-.}/selenium/${TestName:-standalone}/`.
+An unavailable browser or screenshot transport emits a warning without
+replacing the test failure.

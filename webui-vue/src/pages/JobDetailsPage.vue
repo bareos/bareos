@@ -1,22 +1,17 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading job…')" />
-    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <Breadcrumbs :items="breadcrumbItems" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
-        <q-btn
-          flat
-          icon="arrow_back"
-          :label="backLabel"
-          :to="backLocation"
-          no-caps
-          class="q-mr-md"
-        />
-        <div class="row items-center q-gutter-sm">
-          <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
-          <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+        <div class="column">
+          <div class="row items-center q-gutter-sm">
+            <div class="text-h5">Job #{{ job.id }} — {{ job.name }}</div>
+            <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+          </div>
         </div>
       </div>
 
@@ -34,7 +29,14 @@
                     <span v-if="row.status">
                       <span
                         v-if="row.waiting"
-                        class="row items-center no-wrap q-gutter-x-xs"
+                        class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+                        role="button"
+                        tabindex="0"
+                        :aria-label="`${row.status}: ${t('Jump to log')}`"
+                        :title="t('Jump to log')"
+                        @click="jumpToLog"
+                        @keydown.enter="jumpToLog"
+                        @keydown.space.prevent="jumpToLog"
                       >
                         <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                         <span class="text-orange-7 text-caption">{{ row.status }}</span>
@@ -51,6 +53,14 @@
                     </span>
                     <span v-else>{{ row.value }}</span>
                   </q-item-section>
+                  <q-item-section v-if="row.editComment" side>
+                    <q-btn
+                      flat round dense size="sm" icon="edit" color="primary"
+                      :title="t('Edit comment')" :aria-label="t('Edit comment')"
+                      data-testid="job-comment-edit"
+                      @click="openJobComment"
+                    />
+                  </q-item-section>
                 </q-item>
               </q-list>
             </q-card-section>
@@ -64,10 +74,12 @@
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header">{{ t('Actions') }}</q-card-section>
             <q-card-section class="q-gutter-sm">
-              <q-btn icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
-                     :loading="rerunLoading" @click="confirmRerun" />
+              <q-btn v-if="canRerunCurrentJob" icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
+                     :loading="rerunLoading" @click="confirmRerun" data-testid="job-details-rerun" />
+              <q-btn v-if="!isRestoreJob" icon="restore" :label="t('Restore Job')" color="secondary" no-caps
+                     @click="openRestoreDetails" data-testid="job-details-restore" />
               <q-btn v-if="isRunning" icon="cancel" :label="t('Cancel Job')" color="negative" no-caps
-                     :loading="cancelLoading" @click="confirmCancel" />
+                     :loading="cancelLoading" @click="confirmCancel" data-testid="job-details-cancel" />
             </q-card-section>
           </q-card>
 
@@ -106,18 +118,28 @@
         </div>
 
         <!-- Job Log -->
-        <div class="col-12">
+        <div ref="logSection" class="col-12" data-testid="job-log-section">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
                 <span>{{ t('Job Log') }}</span>
               <q-space />
+              <template v-if="issueLineIndexes.length >= 2">
+                <span class="text-caption q-mr-sm">
+                  {{ t('Issue {current} of {total}', { current: currentIssueDisplay, total: issueLineIndexes.length }) }}
+                </span>
+                <q-btn flat round dense icon="arrow_upward" size="sm" color="white"
+                       :title="t('Previous issue')" :aria-label="t('Previous issue')" @click="jumpToIssue(-1)" />
+                <q-btn flat round dense icon="arrow_downward" size="sm" color="white"
+                       :title="t('Next issue')" :aria-label="t('Next issue')" @click="jumpToIssue(1)" />
+              </template>
               <q-btn flat round dense icon="content_copy" size="sm" color="white"
-                     :title="t('Copy log')" @click="copyLog" />
+                     :title="t('Copy log')" :aria-label="t('Copy log')" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
               <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">
                 <div v-for="(line, i) in highlightedLines" :key="i"
-                     :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
+                     :ref="el => setLineRef(el, i)"
+                     :class="['log-line', `log-line--${line.type}`, { 'log-line--focused': i === focusedLineIndex }]">{{ line.text }}</div>
               </div>
                <div v-else class="text-grey text-caption q-pa-md">{{ t('No log entries found.') }}</div>
             </q-card-section>
@@ -128,6 +150,12 @@
     </div>
 
     <div v-else-if="!loading" class="text-center q-pa-xl text-grey">{{ t('Job not found.') }}</div>
+    <CommentEditDialog
+      v-model="commentDialogOpen"
+      :title="t('Edit comment')"
+      :comment="job?.comment ?? ''"
+      :save="saveJobComment"
+    />
   </q-page>
 </template>
 
@@ -145,6 +173,7 @@ import {
   overlayRuntimeStatuses,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -158,6 +187,7 @@ import {
   buildJobDetailsQuery,
   buildListJobCommand,
   buildRerunJobCommand,
+  canRerunJob,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -166,6 +196,7 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
   mergeJobMediaByVolume,
+  classifyLogLine,
 } from '../utils/jobs.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -173,6 +204,9 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import CommentEditDialog from '../components/CommentEditDialog.vue'
+import { buildJobCommentCommand } from '../utils/volumeBulk.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -198,16 +232,16 @@ const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const currentJobDetailsQuery = computed(() => resolveJobDetailsQuery(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
-    ? t('Back to Client')
+    ? t('Client')
     : (dashboardOrigin.value
-      ? t('Back to Dashboard')
+      ? t('Dashboard')
       : (
         directorOrigin.value
-          ? t('Back to Director')
+          ? t('Director')
           : (
             restoreOrigin.value
-              ? t('Back to Restore')
-              : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+              ? t('Restore')
+              : (volumeOrigin.value ? t('Volume') : t('Jobs'))
           )
       ))
 ))
@@ -270,50 +304,229 @@ const backLocation = computed(() => {
     query: backToJobsQuery.value,
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: jobData.value ? `${t('Job')} #${jobData.value.id}` : `${t('Job')} #${currentJobId.value}` },
+])
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
 const jobData       = ref(null)
 const logLines      = ref('')
 const logContainer  = ref(null)
+const logSection = ref(null)
 const volumes       = ref([])
 const volumeDetailsByName = ref({})
 const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
 const volumesPagination = usePersistedTablePagination('job-details.volumes', {
-  rowsPerPage: 15,
+  rowsPerPage: 10,
   sortBy: 'volumename',
   descending: false,
 })
 
-// Scroll the log panel to the bottom whenever new log content arrives.
-watch(logLines, () => {
+const logFocus = computed(() => {
+  const value = route.query.logFocus
+  return ['error', 'warning', 'ok', 'section'].includes(value) ? value : ''
+})
+const lineRefs = ref({})
+const focusedLineIndex = ref(-1)
+const focusedIssuePosition = ref(0)
+let autoFocusPending = true
+
+watch(() => [currentJobId.value, requestedDirector.value, logFocus.value], () => {
+  autoFocusPending = true
+  focusedLineIndex.value = -1
+  focusedIssuePosition.value = 0
+}, { flush: 'sync' })
+
+function setLineRef(el, index) {
+  if (el) lineRefs.value[index] = el
+  else delete lineRefs.value[index]
+}
+
+// Indexes of all error/warning lines, used for the prev/next issue navigation.
+const issueLineIndexes = computed(() => (
+  highlightedLines.value
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => line.type === 'error' || line.type === 'warning')
+    .map(({ index }) => index)
+))
+
+const currentIssueDisplay = computed(() => {
+  const pos = issueLineIndexes.value.indexOf(focusedLineIndex.value)
+  return pos >= 0 ? pos + 1 : Math.min(focusedIssuePosition.value + 1, issueLineIndexes.value.length)
+})
+
+function scrollToLine(index) {
+  // The DOM element for a given log line may take a couple of render
+  // passes to appear (e.g. right after the "No log entries" placeholder is
+  // replaced by the actual list), so poll briefly for it instead of
+  // assuming a single nextTick/animation frame is enough.
+  let attempts = 0
+  const tryScroll = () => {
+    const el = lineRefs.value[index]
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ block: 'center' })
+      return
+    }
+    attempts += 1
+    if (attempts < 20) {
+      setTimeout(tryScroll, 25)
+    }
+  }
+  nextTick(tryScroll)
+}
+
+function focusIssueAt(position) {
+  const indexes = issueLineIndexes.value
+  if (!indexes.length) return
+  const clamped = ((position % indexes.length) + indexes.length) % indexes.length
+  focusedIssuePosition.value = clamped
+  focusedLineIndex.value = indexes[clamped]
+  scrollToLine(focusedLineIndex.value)
+}
+
+function jumpToIssue(direction) {
+  const currentPosition = issueLineIndexes.value.indexOf(focusedLineIndex.value)
+  if (currentPosition < 0) {
+    focusIssueAt(direction > 0 ? 0 : issueLineIndexes.value.length - 1)
+    return
+  }
+  focusIssueAt(currentPosition + direction)
+}
+
+function jumpToLog() {
+  logSection.value?.scrollIntoView({ block: 'start' })
+}
+
+// Find the log line to jump to for a given logFocus value:
+// - 'error'   → first error line (falls back to first warning line)
+// - 'warning' → first warning line (falls back to first error line)
+// - 'ok'      → last line classified as 'ok' (the termination summary)
+function findFocusTargetIndex(focus) {
+  const lines = highlightedLines.value
+  if (focus === 'error' || focus === 'warning') {
+    const preferredType = focus
+    const fallbackType = focus === 'error' ? 'warning' : 'error'
+    const preferredIndex = lines.findIndex(l => l.type === preferredType)
+    if (preferredIndex >= 0) return preferredIndex
+    return lines.findIndex(l => l.type === fallbackType)
+  }
+  if (focus === 'ok') {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].type === 'ok') return i
+    }
+  }
+  return -1
+}
+
+// Scroll the log panel on first load: jump to and highlight the relevant
+// error/warning/termination line if logFocus was requested, otherwise fall
+// back to the default "scroll to bottom" behavior.
+watch([logLines, logFocus, logContainer, logSection], () => {
+  if (autoFocusPending && logFocus.value === 'section' && logSection.value) {
+    autoFocusPending = false
+    nextTick(jumpToLog)
+  }
+  if (!logLines.value) return
+  if (autoFocusPending && logFocus.value) {
+    nextTick(() => {
+      if (!autoFocusPending || !logContainer.value) return
+      autoFocusPending = false
+      const targetIndex = findFocusTargetIndex(logFocus.value)
+      if (targetIndex >= 0) {
+        const issuePos = issueLineIndexes.value.indexOf(targetIndex)
+        focusedIssuePosition.value = issuePos >= 0 ? issuePos : 0
+        focusedLineIndex.value = targetIndex
+        scrollToLine(targetIndex)
+        return
+      }
+      if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
+    })
+    return
+  }
   nextTick(() => {
     if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
   })
 })
 
 // ── data loading ──────────────────────────────────────────────────────────────
-async function ensureJobDirector() {
-  if (!requestedDirector.value) {
+async function ensureJobDirector(targetDirector = requestedDirector.value) {
+  if (!targetDirector) {
     return
   }
 
-  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+  if (auth.user?.director === targetDirector && director.isConnected) {
     return
   }
 
-  await switchActiveDirector(requestedDirector.value)
+  await switchActiveDirector(targetDirector)
+}
+
+const commentDialogOpen = ref(false)
+const commentTarget = ref(null)
+let loadRevision = 0
+let routeLoadRevision = 0
+const pendingLoads = new Set()
+
+function openJobComment() {
+  if (!jobData.value || String(jobData.value.id) !== String(currentJobId.value)
+      || jobData.value.director !== currentJobDirector.value) return
+  commentTarget.value = { jobId: jobData.value.id, director: jobData.value.director }
+  commentDialogOpen.value = true
+}
+
+watch(() => [currentJobId.value, currentJobDirector.value], () => {
+  commentDialogOpen.value = false
+  commentTarget.value = null
+}, { flush: 'sync' })
+
+async function saveJobComment(comment) {
+  const target = commentTarget.value
+  if (!target) throw new Error(t('Job not found.'))
+  const credentials = auth.getCredentials()
+  if (!credentials?.password || !target.director) throw new Error(t('Not logged in.'))
+  const client = await createDirectorCommandClient({ ...credentials, director: target.director })
+  try {
+    if (target !== commentTarget.value) throw new Error(t('Job not found.'))
+    await client.call(buildJobCommentCommand(target.jobId, comment))
+  } finally {
+    client.disconnect()
+  }
+  if (target === commentTarget.value && jobData.value) {
+    loadRevision++
+    jobData.value = { ...jobData.value, comment }
+  }
 }
 
 async function loadJob() {
-  await ensureJobDirector()
+  const target = { jobId: currentJobId.value, director: currentJobDirector.value, revision: loadRevision + 1 }
+  pendingLoads.add(target)
+  try {
+    await loadJobRequest()
+  } finally {
+    pendingLoads.delete(target)
+  }
+}
+
+async function loadJobRequest() {
+  const revision = ++loadRevision
+  const jobId = currentJobId.value
+  const targetDirector = currentJobDirector.value
+  const current = () => revision === loadRevision
+    && String(jobId) === String(currentJobId.value)
+    && targetDirector === currentJobDirector.value
+    && (!targetDirector || auth.user?.director === targetDirector)
+  await ensureJobDirector(targetDirector)
+  if (!current()) return
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
-    director.call(buildListJobCommand(currentJobId.value)),
-    director.call(`list joblog jobid=${currentJobId.value}`),
-    director.call(`list jobmedia jobid=${currentJobId.value}`),
+    director.call(buildListJobCommand(jobId)),
+    director.call(`list joblog jobid=${jobId}`),
+    director.call(`list jobmedia jobid=${jobId}`),
   ])
+  if (!current()) return
 
   if (jobRes.status === 'fulfilled') {
     const raw   = jobRes.value
@@ -321,10 +534,11 @@ async function loadJob() {
     if (entry) {
       const loadedJob = {
         ...normaliseJob(entry),
-        director: currentJobDirector.value || null,
+        director: targetDirector || null,
       }
       if (isRunningJobStatus(loadedJob.status)) {
         const runtimeStatus = await Promise.allSettled([director.call('status director')])
+        if (!current()) return
         jobData.value = runtimeStatus[0].status === 'fulfilled'
           ? overlayRuntimeStatuses([loadedJob], runtimeStatus[0].value?.running)[0]
           : loadedJob
@@ -355,6 +569,7 @@ async function loadJob() {
     const volumeResults = await Promise.allSettled(
       volumeNames.map(name => director.call(`llist volume=${quoteDirectorString(name)}`))
     )
+    if (!current()) return
 
     volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
       const result = volumeResults[index]
@@ -372,9 +587,11 @@ async function loadJob() {
       ...row,
     }))
   }
+  if (jobRes.status === 'fulfilled' && current()) error.value = null
 }
 
 watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () => {
+  const revision = ++routeLoadRevision
   loading.value = true
   error.value = null
   jobData.value = null
@@ -384,15 +601,16 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
   try {
     await loadJob()
   } catch (loadError) {
-    error.value = loadError.message ?? t('Failed to load job')
+    if (revision === routeLoadRevision) error.value = loadError.message ?? t('Failed to load job')
   } finally {
-    loading.value = false
+    if (revision === routeLoadRevision) loading.value = false
   }
 }, { immediate: true })
 
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
 const isRestoreJob = computed(() => resolveJobTypeCode(job.value?.type) === 'R')
+const canRerunCurrentJob = computed(() => canRerunJob(job.value))
 const showVolumesCard = computed(() => !isRestoreJob.value || volumes.value.length > 0)
 
 const volumeCols = computed(() => [
@@ -425,6 +643,7 @@ const summaryRows = computed(() => {
     { label: t('Bytes'),      value: formatBytes(j.bytes) },
     { label: t('Speed'),      value: formatSpeed(j.bytes, j.duration) },
     { label: t('Errors'),     value: j.errors },
+    { label: t('Comment'),    value: j.comment || '—', editComment: true },
   ]
 })
 
@@ -432,16 +651,7 @@ const jobLog = computed(() => logLines.value)
 
 const highlightedLines = computed(() => {
   if (!logLines.value) return []
-  return logLines.value.split('\n').map(line => {
-    const l = line.toLowerCase()
-    if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
-      return { text: line, type: 'normal' }
-    }
-    if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
-    if (/warning|warn/.test(l))                      return { text: line, type: 'warning' }
-    if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
-    return { text: line, type: 'normal' }
-  })
+  return logLines.value.split('\n').map(line => ({ text: line, type: classifyLogLine(line) }))
 })
 
 // ── auto-refresh for running jobs ─────────────────────────────────────────────
@@ -453,7 +663,16 @@ function startPolling() {
   stopPolling()
   _pollTimer = setInterval(async () => {
     if (!isRunning.value) { stopPolling(); return }
-    await loadJob()
+    const target = { jobId: currentJobId.value, director: currentJobDirector.value }
+    if ([...pendingLoads].some(load => load.jobId === target.jobId
+      && load.director === target.director && load.revision === loadRevision)) return
+    try {
+      await loadJob()
+    } catch (loadError) {
+      if (currentJobId.value === target.jobId && currentJobDirector.value === target.director) {
+        error.value = loadError.message ?? t('Failed to load job')
+      }
+    }
   }, 5000)
 }
 
@@ -467,7 +686,11 @@ watch(isRunning, (running) => {
   else stopPolling()
 }, { immediate: true })
 
-onUnmounted(stopPolling)
+onUnmounted(() => {
+  loadRevision++
+  routeLoadRevision++
+  stopPolling()
+})
 
 // ── actions ───────────────────────────────────────────────────────────────────
 function escapeHtml(value) {
@@ -487,6 +710,39 @@ function confirmRerun() {
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(doRerun)
+}
+
+async function openRestoreDetails() {
+  if (!job.value) { return }
+
+  const selectedJob = job.value
+  const targetDirector = currentJobDirector.value
+  const jobId = currentJobId.value
+  try {
+    if (targetDirector) {
+      await switchActiveDirector(targetDirector)
+    }
+    if (String(currentJobId.value) !== String(jobId)
+        || currentJobDirector.value !== targetDirector) {
+      throw new Error(t('Job not found.'))
+    }
+    await router.push({
+      name: 'restore',
+      query: {
+        client: selectedJob.client,
+        director: targetDirector,
+        jobid: jobId,
+      },
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: targetDirector || t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
 }
 
 async function doRerun() {
@@ -589,4 +845,5 @@ function copyLog() {
 .log-line--ok      { color: #89d185; }
 .log-line--warning { color: #f2c037; }
 .log-line--error   { color: #f48771; font-weight: 600; background: rgba(244, 135, 113, 0.08); }
+.log-line--focused { outline: 2px solid currentColor; background: rgba(255, 255, 255, 0.12); }
 </style>

@@ -221,6 +221,9 @@ class OutputFormatter {
                       const char* value,
                       const char* value_fmt,
                       int wrap = -1);
+  void ObjectKeyValuePreformatted(const char* key,
+                                  const char* value,
+                                  const char* text);
 
   /* some programs (BAT in api mode 1) parses data message by message,
    * instead of using a separator.
@@ -239,6 +242,7 @@ class OutputFormatter {
   void AddDisabledFilterTuple(int column, int restype);
   void ClearFilters();
   bool HasFilters() { return filters && !filters->empty(); }
+  bool HasRowFilters();
   bool has_acl_filters();
   bool FilterData(void* data);
 

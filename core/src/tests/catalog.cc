@@ -31,9 +31,12 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #include "lib/parse_conf.h"
+#include "lib/output_formatter.h"
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <cstdarg>
+#include <jansson.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -110,6 +113,107 @@ void CatalogTest::TearDown()
   if (my_config) {
     delete my_config;
     my_config = nullptr;
+  }
+}
+
+TEST_F(CatalogTest, big_query_stops_when_handler_requests_it)
+{
+  int rows = 0;
+  auto stop_after_first = [](void* context, int, char**) {
+    ++*static_cast<int*>(context);
+    return 1;
+  };
+  ASSERT_TRUE(db->BigSqlQuery("SELECT n FROM generate_series(1, 350) AS n",
+                              stop_after_first, &rows));
+  EXPECT_EQ(rows, 1);
+}
+
+static bool CaptureCatalogOutput(void* context, const char* format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  PoolMem output;
+  output.Bvsprintf(format, args);
+  va_end(args);
+  *static_cast<std::string*>(context) += output.c_str();
+  return true;
+}
+
+TEST_F(CatalogTest, filtered_job_pages_cross_cursor_batches)
+{
+  struct Cleanup {
+    BareosDb* db;
+    ~Cleanup() { db->SqlExec("DELETE FROM Job WHERE Name LIKE 'cr-page-%'"); }
+  } cleanup{db};
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Job (Job, Name, Type, Level, JobStatus) "
+      "SELECT 'cr-page-' || n, CASE WHEN n <= 120 THEN 'cr-page-allowed' "
+      "ELSE 'cr-page-denied' END, 'B', 'F', 'T' FROM generate_series(1, 340) "
+      "n"));
+
+  auto filter = [](void* context, void* data, of_filter_tuple* tuple) {
+    ++*static_cast<int*>(context);
+    const auto row = static_cast<char**>(data);
+    return strcmp(row[tuple->u.acl_filter.column], "cr-page-allowed") == 0
+               ? OF_FILTER_STATE_SHOW
+               : OF_FILTER_STATE_SUPPRESS;
+  };
+  for (const auto type : {HORZ_LIST, VERT_LIST}) {
+    for (const bool descending : {false, true}) {
+      for (const bool last : {false, true}) {
+        std::vector<std::string> expected;
+        auto list = [&](uint64_t limit, uint64_t offset, bool paginated) {
+          std::string output;
+          int filter_calls = 0;
+          OutputFormatter formatter(CaptureCatalogOutput, &output, filter,
+                                    &filter_calls, API_MODE_JSON);
+          formatter.AddAclFilterTuple(type == VERT_LIST ? 2 : 1, 0);
+          JobDbRecord jr{};
+          jr.limit = limit;
+          jr.offset = offset;
+          const std::string range
+              = paginated ? " LIMIT " + std::to_string(limit) + " OFFSET "
+                                + std::to_string(offset)
+                          : "";
+          db->ListJobRecords(jcr, &jr, range.c_str(), nullptr, {}, {}, {},
+                             nullptr, nullptr, 0, last, false, &formatter, type,
+                             descending, "jobid", "cr-page-");
+          if (paginated && limit == 2 && offset == 0 && !last) {
+            EXPECT_LE(filter_calls, descending ? 224 : 4);
+          }
+          formatter.FinalizeResult(true);
+          json_error_t error{};
+          json_t* root = json_loads(output.c_str(), 0, &error);
+          EXPECT_NE(root, nullptr) << output << " " << error.text;
+          std::vector<std::string> ids;
+          if (root) {
+            json_t* jobs
+                = json_object_get(json_object_get(root, "result"), "jobs");
+            EXPECT_TRUE(json_is_array(jobs)) << output;
+            size_t i;
+            json_t* job;
+            json_array_foreach(jobs, i, job)
+            {
+              const char* id = json_string_value(json_object_get(job, "jobid"));
+              EXPECT_NE(id, nullptr);
+              if (id) { ids.emplace_back(id); }
+            }
+            json_decref(root);
+          }
+          return ids;
+        };
+        expected = list(0, 0, false);
+        ASSERT_EQ(expected.size(), last ? 1 : 120);
+        for (const uint64_t offset : {0, 1, 99, 100, 119, 120}) {
+          const auto start = std::min<size_t>(offset, expected.size());
+          const auto end = std::min(start + 2, expected.size());
+          EXPECT_EQ(list(2, offset, true),
+                    (std::vector<std::string>(expected.begin() + start,
+                                              expected.begin() + end)));
+        }
+        EXPECT_TRUE(list(0, 0, true).empty());
+      }
+    }
   }
 }
 
