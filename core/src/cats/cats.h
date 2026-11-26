@@ -469,7 +469,8 @@ class pathid_cache;
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-// Current database version number schema = 2000 + 10 * Major + Minor
+// Future schema changes use the target Bareos major as their version prefix.
+// Version 2260 retains legacy numbering; see docs/adr/0007.
 #define BDB_VERSION 2260
 
 typedef char** SQL_ROW;

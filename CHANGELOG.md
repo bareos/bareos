@@ -157,6 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - publiccode.yml: Update for 25.1.1 [PR #2799]
 - github: improve feature, issues, pr templates [PR #2886]
 - docs: document that VMware plugin jobs cannot be restored from a Virtual Full [PR #2906]
+- doc: add adr document for catalog schema versioning policy [PR #2949]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2463,4 +2464,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2934]: https://github.com/bareos/bareos/pull/2934
 [PR #2935]: https://github.com/bareos/bareos/pull/2935
 [PR #2941]: https://github.com/bareos/bareos/pull/2941
+[PR #2949]: https://github.com/bareos/bareos/pull/2949
 [unreleased]: https://github.com/bareos/bareos/tree/master
