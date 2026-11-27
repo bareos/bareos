@@ -90,6 +90,15 @@ std::uint32_t SafeCast(std::size_t size)
   return size;
 }
 
+std::int32_t UnfinishedStreamKey(std::int32_t stream)
+{
+  if (stream == std::numeric_limits<std::int32_t>::min()) {
+    throw std::invalid_argument("Cannot normalize stream id.");
+  }
+
+  return stream < 0 ? -stream : stream;
+}
+
 std::vector<char> LoadFile(int fd)
 {
   std::vector<char> loaded;
@@ -129,6 +138,16 @@ void WriteFile(int fd, const std::vector<char>& written)
     } else {
       progress += res;
     }
+  }
+}
+
+void SyncFile(int fd, const char* name)
+{
+  if (fsync(fd) < 0) {
+    std::string errctx = "while syncing '";
+    errctx += name;
+    errctx += "'";
+    throw std::system_error(errno, std::generic_category(), errctx);
   }
 }
 
@@ -350,7 +369,7 @@ auto volume::reserve_parts(record_header header) -> std::vector<reserved_part>
         .VolSessionId = current_block->VolSessionId,
         .VolSessionTime = current_block->VolSessionTime,
         .FileIndex = header.FileIndex,
-        .Stream = -header.Stream,
+        .Stream = UnfinishedStreamKey(header.Stream),
     };
 
     if (auto found = unfinished.find(rec_id); found != unfinished.end()) {
@@ -440,10 +459,14 @@ void volume::PushRecord(record_header header,
         .VolSessionId = current_block->VolSessionId,
         .VolSessionTime = current_block->VolSessionTime,
         .FileIndex = header.FileIndex,
-        .Stream = header.Stream,
+        .Stream = UnfinishedStreamKey(header.Stream),
     };
 
-    unfinished.emplace(rec_id, std::move(reserved_parts));
+    if (auto [_, inserted]
+        = unfinished.emplace(rec_id, std::move(reserved_parts));
+        !inserted) {
+      throw std::runtime_error("Duplicate unfinished record reservation.");
+    }
   }
 }
 
@@ -542,9 +565,17 @@ void volume::truncate()
 
 void volume::flush()
 {
-  backing->blocks.flush();
-  backing->parts.flush();
   for (auto& vec : backing->datafiles) { vec.flush(); }
+  backing->parts.flush();
+  backing->blocks.flush();
+
+  raii_fd conf_fd{openat(dird.fileno(), "config", O_RDONLY)};
+  if (!conf_fd) {
+    std::string errctx = "Could not open dedup config file";
+    throw std::system_error(errno, std::generic_category(), errctx);
+  }
+  SyncFile(conf_fd.fileno(), "config");
+  SyncFile(dird.fileno(), sys_path.c_str());
 }
 
 std::size_t volume::ReadBlock(std::size_t blocknum,
