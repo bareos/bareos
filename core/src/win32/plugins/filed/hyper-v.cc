@@ -4562,6 +4562,22 @@ static bRC pluginBackupIO(PluginContext* ctx,
       return bRC_Error;
     } break;
     case filedaemon::IO_CLOSE: {
+      // Same order as IO_OPEN and start_backup_file(): disks are backed up
+      // before the config files, so files_to_backup is never empty while a
+      // disk is being closed.  Checking the files first left the last disk
+      // attached until the job ended, and its merge failed during
+      // ConvertToReferencePoint() (bareos/bareos#2624).
+      if (prepared.disks_to_backup.size() > 0) {
+        // we are backing up a disk
+        if (prepared.disk_to_backup) {
+          DetachVirtualDisk(prepared.disk_to_backup.value(),
+                            DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+          CloseHandle(prepared.disk_to_backup.value());
+          prepared.disk_to_backup.reset();
+        }
+        io->status = 0;
+        return bRC_OK;
+      }
       if (prepared.files_to_backup.size() > 0) {
         auto res = CloseHandle(io->hndl);
 
@@ -4573,15 +4589,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
         }
 
         return bRC_OK;
-      }
-      if (prepared.disks_to_backup.size() > 0) {
-        // we are backing up a disk
-        if (prepared.disk_to_backup) {
-          DetachVirtualDisk(prepared.disk_to_backup.value(),
-                            DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
-          CloseHandle(prepared.disk_to_backup.value());
-          prepared.disk_to_backup.reset();
-        }
       }
       return bRC_Error;
     } break;

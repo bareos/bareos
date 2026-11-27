@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,12 @@ vm_data_file="vm.info"
 
 full_backup_file="full.txt"
 incr_backup_file="incr.txt"
+incr2_backup_file="incr2.txt"
+diff_backup_file="diff.txt"
 
 export vm_name
 export vm_data_file
 export full_backup_file
 export incr_backup_file
+export incr2_backup_file
+export diff_backup_file
