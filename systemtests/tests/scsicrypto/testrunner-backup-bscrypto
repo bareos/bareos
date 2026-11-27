@@ -62,6 +62,17 @@ reset_eject_drive()
   /usr/sbin/mtx -f "${changer}" inventory || :
 }
 
+assert_drive_crypto_modes()
+{
+  local enc="$1" dec="$2" tag="$3"
+  local log="$tmp/drive_status_${tag}.log"
+  "${mybsc}" -d250 --dt --drive-encryption-status "${ltodrive}" >"${log}"
+  expect_grep "Encryption Mode: ${enc}" "${log}" \
+    "Drive encryption mode not ${enc} (${tag})."
+  expect_grep "Decryption Mode: ${dec}" "${log}" \
+    "Drive decryption mode not ${dec} (${tag})."
+}
+
 start_test
 
 # Create kek
@@ -240,12 +251,13 @@ expect_grep "${volume}" \
   "Volume ${volume} not found in cache dump".
 
 # Check if crypto cache is there and readable.
-# Again clear the key from the drive
+# Again clear the key from the drive and verify SPIN(0x0020) reports disabled
 if ! "${mybsc}" -d250 --dt --clear-encryption "${ltodrive}"; then
   printf "Clearing KEK failed \n"
   export estat=1
   exit 1
 fi
+assert_drive_crypto_modes Disabled Disabled after_clear
 
 # With wrapped key volume in crypto cache we should be able
 # to check the drive and volume encryption status
@@ -298,5 +310,52 @@ expect_grep "Crypto cache read 1 entries" \
   "bextract: no crypto cache entry found."
 
 check_restore_diff "${BackupDirectory}"
+
+# Verify bextract cleared the drive encryption key on Device::close()
+assert_drive_crypto_modes Disabled Disabled after_bextract
+
+# Verify stale drive key left across a bareos-sd restart is cleared even with
+# the default Query Crypto Status = No configuration before labeling an
+# unencrypted volume.
+sed -i 's/Query Crypto Status = Yes/Query Crypto Status = No/g' \
+  etc/bareos/bareos-sd.d/device/tape_devices.conf
+
+/usr/bin/mt -f "${ltodrive}" offline || :
+/usr/sbin/mtx -f "${changer}" unload "${slot}" 0 || :
+slot4_vol=$(/usr/sbin/mtx -f "${changer}" status | ${AWK} -F 'VolumeTag=' '/Storage Element 4:/ { gsub(/[[:space:]]/, "", $2); print $2; exit }')
+/usr/sbin/mtx -f "${changer}" load 4 0 || :
+sleep 1
+/usr/bin/mt -f "${ltodrive}" rewind
+/usr/bin/mt -f "${ltodrive}" weof 2
+/usr/bin/mt -f "${ltodrive}" rewind
+
+"${mybsc}" -s "${keyfile}" "${ltodrive}"
+assert_drive_crypto_modes Encrypt Mixed stale_before
+
+start_bareos
+stale_label_log="$tmp/${TestName}-stale-restart-label.out"
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${stale_label_log}
+delete volume=${slot4_vol} yes
+label storage=Tape-0 volume=PlainAfterRestart pool=Scratch slot=4 drive=0 yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+stop_bareos
+sleep 1
+
+assert_drive_crypto_modes Disabled Disabled stale_after
+
+# Verify PlainAfterRestart Block 0 was written in cleartext and can be read
+# without any encryption key loaded.
+/usr/bin/mt -f "${ltodrive}" rewind
+bls_plain_log=$tmp/bls-plain_after_restart.log
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -V PlainAfterRestart "${tape_device}" >"${bls_plain_log}"
+expect_grep "VolName           : PlainAfterRestart" \
+  "${bls_plain_log}" \
+  "Unencrypted volume PlainAfterRestart label could not be read in cleartext."
 
 end_test
