@@ -20,6 +20,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -36,6 +37,61 @@ esac
 
 
 class PackageHooksTest(unittest.TestCase):
+    def test_vue_component_installs_director_examples(self):
+        with tempfile.TemporaryDirectory(prefix="webui-install-") as directory:
+            root = Path(directory)
+            for name in ("webui", "webui-vue"):
+                shutil.copytree(
+                    ROOT / name,
+                    root / name,
+                    ignore=shutil.ignore_patterns(
+                        "node_modules", "dist", "__pycache__"
+                    ),
+                )
+            dist = root / "webui-vue/dist"
+            dist.mkdir()
+            (dist / "index.html").write_text("test bundle")
+            (root / "CMakeLists.txt").write_text(
+                "cmake_minimum_required(VERSION 3.17)\n"
+                "project(webui_install_test)\n"
+                "include(GNUInstallDirs)\n"
+                "set(BAREOS_FULL_VERSION 26.0.0)\n"
+                "set(BAREOS_PLATFORM debian)\n"
+                "set(sysconfdir /etc)\n"
+                "set(configtemplatedir /usr/lib/bareos/defaultconfigs)\n"
+                "add_subdirectory(webui)\n"
+                "add_subdirectory(webui-vue)\n"
+            )
+            build = root / "build"
+            subprocess.run(
+                ["cmake", "-S", str(root), "-B", str(build)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            examples = (
+                "bareos-dir.d/console/admin.conf.example",
+                "bareos-dir.d/profile/webui-limited.conf.example",
+            )
+            for component in ("Unspecified", "webui-vue"):
+                stage = root / component
+                subprocess.run(
+                    ["cmake", "--install", str(build), "--component", component],
+                    check=True,
+                    env={**os.environ, "DESTDIR": str(stage)},
+                    capture_output=True,
+                    text=True,
+                )
+                for example in examples:
+                    installed = stage / "usr/lib/bareos/defaultconfigs" / example
+                    if component == "webui-vue":
+                        self.assertEqual(
+                            installed.read_bytes(),
+                            (ROOT / "webui-vue/install/bareos" / example).read_bytes(),
+                        )
+                    else:
+                        self.assertFalse(installed.exists())
+
     def run_hook(self, package, platform, active=True, valid=True):
         if platform == "debian":
             script = (ROOT / "debian" / f"{package}.postinst").read_text()
