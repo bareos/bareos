@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,24 +44,18 @@ namespace storagedaemon {
  * 2. Lock()    simple mutex that locks the device structure. A Lock
  *              can be acquired while a device is blocked if it is not
  *              locked.
- * 3. rLock(locked) "recursive" Lock, when means that a Lock (mutex)
- *                  will be acquired on the device if it is not blocked
- *                  by some other thread. If the device was blocked by
- *                  the current thread, it will acquire the lock.
- *                  If some other thread has set a block on the device,
- *                  this call will wait until the device is unblocked.
- *                  Can be called with locked true, which means the
- *                  Lock is already set
+ * 3. WaitUntilOtherThreadReleasesBlock() waits for another thread to unblock
+ * the device. The device mutex must be held.
  *
  * - A lock is normally set when modifying the device structure.
- * - A rLock is normally acquired when you want to block the device
- *   i.e. it will wait until the device is not blocked.
+ * - WaitUntilOtherThreadReleasesBlock() is normally called after locking the
+ * device when you need to wait until another thread unblocks it.
  * - A block is normally set during long operations like writing to the device.
  * - If you are writing the device, you will normally block and lock it.
  * - A lock cannot be violated. No other thread can touch the
  *   device while a lock is set.
- * - When a block is set, every thread accept the thread that set
- *   the block will block if rLock is called.
+ * - When a block is set, every thread except the thread that set
+ *   the block will wait in WaitUntilOtherThreadReleasesBlock().
  * - A device can be blocked for multiple reasons, labeling, writing,
  *   acquiring (opening) the device, waiting for the operator, unmounted,
  *   ...
@@ -77,20 +71,15 @@ namespace storagedaemon {
  * Device::Lock()   does lock_mutex(mutex_)     (in dev.h)
  * Device::Unlock() does unlock_mutex(mutex_)
  *
- * Device::rLock(locked) allows locking the device when this thread
- *                       already has the device blocked.
- * - if (!locked)
- *   Lock()
- * - if blocked and not same thread that locked
- *   pthread_cond_wait
- * - leaves device locked
- *
- * Device::rUnlock() Unlocks but does not unblock same as Unlock();
+ * Device::WaitUntilOtherThreadReleasesBlock() waits while another thread has
+ * blocked the device. It requires the device mutex to be held and leaves it
+ * held.
  *
  * Device::dblock(why) does
- * - rLock();         (recursive device lock)
+ * - Lock()
+ * - WaitUntilOtherThreadReleasesBlock()
  * - BlockDevice(this, why)
- * - rUnlock()
+ * - Unlock()
  *
  * Device::dunblock does
  * - Lock()
@@ -125,9 +114,10 @@ namespace storagedaemon {
  */
 void Device::dblock(int why)
 {
-  rLock(false); /* need recursive lock to block */
+  Lock();
+  WaitUntilOtherThreadReleasesBlock();
   BlockDevice(this, why);
-  rUnlock();
+  Unlock();
 }
 
 void Device::dunblock(bool locked)
@@ -136,39 +126,6 @@ void Device::dunblock(bool locked)
   UnblockDevice(this);
   Unlock();
 }
-
-// DeviceControlRecord locks N.B.
-// Multiple rLock implementation
-void DeviceControlRecord::mLock(bool locked)
-{
-  lock_mutex(r_mutex);
-  if (IsDevLocked()) {
-    unlock_mutex(r_mutex);
-    return;
-  }
-  dev->rLock(locked);
-  IncDevLock();
-  unlock_mutex(r_mutex);
-  return;
-}
-
-// Multiple rUnlock implementation
-void DeviceControlRecord::mUnlock()
-{
-  lock_mutex(r_mutex);
-  if (!IsDevLocked()) {
-    unlock_mutex(r_mutex);
-    Emsg1(M_ABORT, 0, "Call on dcr mUnlock when not locked\n");
-  }
-  DecDevLock();
-  // When the count goes to zero, unlock it
-  if (!IsDevLocked()) { dev->rUnlock(); }
-  unlock_mutex(r_mutex);
-  return;
-}
-
-// Device locks N.B.
-void Device::rUnlock() { Unlock(); }
 
 void Device::Lock() { lock_mutex(mutex_); }
 
@@ -203,27 +160,23 @@ int Device::NextVolTimedwait(const struct timespec* timeout)
 }
 
 /**
- * This is a recursive lock that checks if the device is blocked.
+ * Wait until no other thread blocks the device.
  *
  * When blocked is set, all threads EXCEPT thread with id no_wait_id
- * must wait. The no_wait_id thread is out obtaining a new volume
- * and preparing the label.
+ * wait. A block owned by the current thread is left intact. The device mutex
+ * must be held on entry and remains held on exit.
  */
-void Device::rLock(bool locked)
+void Device::WaitUntilOtherThreadReleasesBlock()
 {
-  if (!locked) {
-    Lock();
-    count_++;
-  }
-
   if (blocked() && !pthread_equal(no_wait_id, pthread_self())) {
     num_waiting++; /* indicate that I am waiting */
     while (blocked()) {
       int status;
       char ed1[50], ed2[50];
 
-      Dmsg3(sd_debuglevel, "rLock blked=%s no_wait=%s me=%s\n", print_blocked(),
-            edit_pthread(no_wait_id, ed1, sizeof(ed1)),
+      Dmsg3(sd_debuglevel,
+            "WaitUntilOtherThreadReleasesBlock blocked=%s no_wait=%s me=%s\n",
+            print_blocked(), edit_pthread(no_wait_id, ed1, sizeof(ed1)),
             edit_pthread(pthread_self(), ed2, sizeof(ed2)));
       if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
         BErrNo be;
@@ -240,10 +193,10 @@ void Device::rLock(bool locked)
  * Block all other threads from using the device
  *
  * Device must already be locked.  After this call,
- * the device is blocked to any thread calling dev->rLock(),
- * but the device is not locked (i.e. no P on device).  Also,
- * the current thread can do slip through the dev->rLock()
- * calls without blocking.
+ * the device is blocked to any thread calling
+ * WaitUntilOtherThreadReleasesBlock(), but the device is not locked (i.e. no P
+ * on device). Also, the current thread can pass through
+ * WaitUntilOtherThreadReleasesBlock() without blocking.
  */
 void _blockDevice(const char* file, int line, Device* dev, int state)
 {

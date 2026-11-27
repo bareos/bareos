@@ -121,7 +121,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
 
   Dmsg1(050, "SetUnload dev=%s\n", dev->print_name());
   dev->SetUnload();
-  if (!dcr->MountNextWriteVolume()) {
+  if (!dcr->MountNextWriteVolume(true /* current job already writes */)) {
     FreeBlock(dcr->block);
     dcr->block = block;
     dev->Lock();
@@ -264,7 +264,8 @@ bool FirstOpenDevice(DeviceControlRecord* dcr)
   Dmsg0(120, "start open_output_device()\n");
   if (!dev) { return false; }
 
-  dev->rLock();
+  dev->Lock();
+  dev->WaitUntilOtherThreadReleasesBlock();
 
   /* Defer opening files */
   if (!dev->IsTape()) {
