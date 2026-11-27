@@ -555,4 +555,10 @@ if(ENABLE_PYTHON AND TARGET python-common)
   )
 endif()
 
+if(ENABLE_OIDC)
+  bareos_add_test(
+    oidc LINK_LIBRARIES GTest::gtest_main GTest::gmock Bauth::Oidc::Backend
+  )
+endif()
+
 include(DebugEdit)

@@ -24,6 +24,15 @@
 #ifndef BAREOS_LIB_TLS_RESOURCE_ITEMS_H_
 #define BAREOS_LIB_TLS_RESOURCE_ITEMS_H_
 
+/* Plan: BareosConnect/BareosAccept just get passed a function/lambda X.
+ *  That function gets as parameter a ConnectionInfo with tls resource,
+ * tls_psk used, certificate used, remote version, etc.
+ * NewAuth/LegacyAuth become namespaces with two free functions.
+ * X just returns true/false if the auth worked or not.
+ * auth_inbound/auth_outbound return prover/verifier used.
+ * The caller gets that information via the lambda that it passed.
+ * For unit testing X can just return always true. */
+
 /* clang-format off */
 
 // Common TLS-Settings for both (Certificate and PSK).

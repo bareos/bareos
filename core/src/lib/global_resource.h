@@ -54,6 +54,7 @@ enum class Type : std::uint64_t
   Schedule,
   Storage,
   User,
+  Oidc,
 };
 
 struct TypeName {
@@ -61,27 +62,26 @@ struct TypeName {
   std::string_view name;
 };
 
-static constexpr TypeName type_names[] = {
-    {Type::Autochanger, "R_AUTOCHANGER"},
-    {Type::Catalog, "R_CATALOG"},
-    {Type::Client, "R_CLIENT"},
-    {Type::ConsoleFont, "R_CONSOLE_FONT"},
-    {Type::Console, "R_CONSOLE"},
-    {Type::Counter, "R_COUNTER"},
-    {Type::Device, "R_DEVICE"},
-    {Type::Director, "R_DIRECTOR"},
-    {Type::Fileset, "R_FILESET"},
-    {Type::JobDefs, "R_JOBDEFS"},
-    {Type::Job, "R_JOB"},
-    {Type::Messages, "R_MSGS"},
-    {Type::Monitor, "R_MONITOR"},
-    {Type::Ndmp, "R_NDMP"},
-    {Type::Pool, "R_POOL"},
-    {Type::Profile, "R_PROFILE"},
-    {Type::Schedule, "R_SCHEDULE"},
-    {Type::Storage, "R_STORAGE"},
-    {Type::User, "R_USER"},
-};
+static constexpr TypeName type_names[] = {{Type::Autochanger, "R_AUTOCHANGER"},
+                                          {Type::Catalog, "R_CATALOG"},
+                                          {Type::Client, "R_CLIENT"},
+                                          {Type::ConsoleFont, "R_CONSOLE_FONT"},
+                                          {Type::Console, "R_CONSOLE"},
+                                          {Type::Counter, "R_COUNTER"},
+                                          {Type::Device, "R_DEVICE"},
+                                          {Type::Director, "R_DIRECTOR"},
+                                          {Type::Fileset, "R_FILESET"},
+                                          {Type::JobDefs, "R_JOBDEFS"},
+                                          {Type::Job, "R_JOB"},
+                                          {Type::Messages, "R_MSGS"},
+                                          {Type::Monitor, "R_MONITOR"},
+                                          {Type::Ndmp, "R_NDMP"},
+                                          {Type::Pool, "R_POOL"},
+                                          {Type::Profile, "R_PROFILE"},
+                                          {Type::Schedule, "R_SCHEDULE"},
+                                          {Type::Storage, "R_STORAGE"},
+                                          {Type::User, "R_USER"},
+                                          {Type::Oidc, "R_OIDC"}};
 
 static constexpr std::string_view GetNameFromType(Type type)
 {

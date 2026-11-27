@@ -34,6 +34,11 @@
 #include "console/console_output.h"
 #include "console/connect_to_director.h"
 #include "include/jcr.h"
+#include "lib/bauth.h"
+#include "lib/bauth/cram_md5.h"
+#ifdef ENABLE_OIDC
+#  include "lib/bauth/oidc/prover.h"
+#endif
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bnet_network_dump.h"
@@ -45,8 +50,10 @@
 #include "lib/watchdog.h"
 #include "lib/bpipe.h"
 #include <stdio.h>
+#include <charconv>
 #include <fstream>
 #include <string>
+#include <system_error>
 
 #if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 // windows has its own isatty implemented, so
@@ -827,6 +834,70 @@ static bool ExaminePamAuthentication(
 }
 #endif /* HAVE_PAM */
 
+struct InteractiveAuthChooser : auth::AlgorithmChooser {
+  size_t choose(
+      std::span<const std::pair<auth::Prover*, auth::challenge*>> algs) override
+  {
+    // auto choose if there is nothing to choose
+    if (algs.size() <= 1) { return 0; }
+
+    ConsoleOutputFormat("Please choose an authentication method:\n");
+    for (size_t i = 0; i < algs.size(); ++i) {
+      auto* chal = algs[i].second;
+      ConsoleOutputFormat("%zu: %s\n", i, chal->display_name.c_str());
+    }
+
+    for (;;) {
+      auto* line = readline("> ");
+      if (!line) {
+        return algs.size();  // nothing was chosen
+      }
+
+      auto* end = line + strlen(line);
+
+      size_t chosen_idx;
+      auto result = std::from_chars(line, end, chosen_idx);
+
+      if (result.ec != std::errc{}) {
+        ConsoleOutputFormat("'%s' is not a valid number: %s\n", line,
+                            std::make_error_code(result.ec).message().c_str());
+      } else if (result.ptr != end) {
+        ConsoleOutputFormat("'%s' has extra unparsed characters.\n", line);
+      } else if (chosen_idx >= algs.size()) {
+        ConsoleOutputFormat("%zu is too big.\n", chosen_idx);
+      } else {
+        free(line);
+        return chosen_idx;
+      }
+      free(line);
+    }
+  }
+};
+
+struct ConsoleAuthenticator : auth::OutboundAuthenticator {
+  bool authenticate(auth::OutboundArgs args) override
+  {
+    auth::Algorithms algs;
+
+    auto identity = my_name;
+    auto password = args.target->password_.value;
+
+#ifdef ENABLE_OIDC
+    algs.add<auth::Oidc::Prover>();
+#endif
+    algs.add<auth::CramMd5::Prover>(identity, password);
+    algs.add<auth::CramMd5::Verifier>("Bareos Auth", identity, password);
+
+    InteractiveAuthChooser chooser;
+
+    algs.chooser = &chooser;
+
+    return authenticate_outbound(algs, args);
+
+    return false;
+  }
+};
+
 int main(int argc, char* argv[])
 {
   INIT_LANGUAGES("");
@@ -1011,7 +1082,9 @@ int main(int argc, char* argv[])
   BStringList response_args;
 
   JobControlRecord jcr;
-  g_UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
+  ConsoleAuthenticator auth;
+  g_UA_sock
+      = ConnectToDirector(jcr, heart_beat, response_args, response_id, &auth);
   if (!g_UA_sock) {
     ConsoleOutput(T_("Failed to connect to Director. Giving up.\n"));
     TerminateConsole(0);

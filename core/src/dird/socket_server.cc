@@ -34,6 +34,7 @@
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
+#include "lib/bauth.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bnet_server_tcp.h"
@@ -129,7 +130,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
       std::unique_ptr<UserAcl> user_acl{};
       if (!auth.console->is_default) {
-        user_acl = UserAcl::from_config(auth.console->res);
+        user_acl = auth.console->auth.get_authenticated_acls();
       }
 
       if (auth.console->res->use_pam_authentication_) {

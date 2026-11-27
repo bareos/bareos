@@ -1699,6 +1699,7 @@ Console {
   Name = "bareos-mon"
   Description = "Restricted console used by tray-monitor to get the status of the director."
   Password = "[md5]4cf5943929b8447731b086f0f43f7f99"
+  Oidc = "test-oidc"
   JobAcl = "*all*"
   # ClientAcl =
   # StorageAcl =
@@ -1730,6 +1731,7 @@ Console {
   Name = "admin"
   # Description =
   Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
+  # Oidc =
   # JobAcl =
   # ClientAcl =
   # StorageAcl =
@@ -1761,6 +1763,7 @@ Console {
   # Name = "*UserAgent*"
   # Description = "root console definition"
   # Password = "[md5]19c05ce71554a186e052ee6bfadcde4a"
+  # Oidc =
   # JobAcl =
   # ClientAcl =
   # StorageAcl =
@@ -1787,3 +1790,10 @@ Console {
   # TlsKey = ""
   # TlsAllowedCn =
 # }
+
+Oidc {
+  Name = "test-oidc"
+  Url  = "Some url"
+  ClientId = "Bareos"
+  # ProfilesClaim = "roles"
+}

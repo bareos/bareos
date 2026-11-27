@@ -35,6 +35,7 @@ endif()
 
 add_library(dird_objects STATIC)
 add_library(Bareos::Dir ALIAS dird_objects)
+
 target_sources(
   dird_objects
   PRIVATE admin.cc
@@ -120,6 +121,10 @@ target_sources(
           volume_key.cc
           pthread_detach_if_not_detached.cc
 )
+
+if(ENABLE_OIDC)
+  target_link_libraries(dird_objects PUBLIC BAuth::Verifier::Oidc)
+endif()
 
 if(HAVE_PAM)
   target_sources(dird_objects PRIVATE auth_pam.cc)
