@@ -3,7 +3,7 @@
 
    Copyright (C) 2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,8 @@ struct b_ctx {
 bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher);
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
-                             int& data_stream);
+                             int& data_stream,
+                             bool reuse_file_index = false);
 void StripPath(FindFilesPacket* ff_pkt);
 void UnstripPath(FindFilesPacket* ff_pkt);
 int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);

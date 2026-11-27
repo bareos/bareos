@@ -411,6 +411,9 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         statpacket.st_mode  = osstat.st_mode
         statpacket.st_uid   = osstat.st_uid
         statpacket.st_gid   = osstat.st_gid
+        statpacket.st_size = osstat.st_size
+        statpacket.st_blocks = osstat.st_blocks
+        statpacket.st_blksize = osstat.st_blksize
         statpacket.st_atime = osstat.st_atime
         statpacket.st_mtime = osstat.st_mtime
         statpacket.st_ctime = osstat.st_ctime

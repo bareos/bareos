@@ -41,6 +41,7 @@
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
+#include "stored/attribute_dedup.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
 #include "stored/mount.h"
@@ -82,6 +83,11 @@ static Attributes* attr;
 
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
+
+static bool ProcessRecord(DeviceRecord* t_rec);
+static AttributeGroupBuffer attribute_group_buffer([](DeviceRecord& record) {
+  ProcessRecord(&record);
+});
 
 int main(int argc, char* argv[])
 {
@@ -391,11 +397,21 @@ static void do_ls(char*)
     return;
   }
   ReadRecords(dcr, RecordCb, MountNextReadVolume);
+  attribute_group_buffer.FlushAll();
   printf("%u files and directories found.\n", num_files);
 }
 
 // Called here for each record from ReadRecords()
 static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
+{
+  if (t_rec->FileIndex >= 0 && AttributeGroupBuffer::IsBuffered(t_rec)) {
+    attribute_group_buffer.Add(t_rec);
+    return true;
+  }
+  return ProcessRecord(t_rec);
+}
+
+static bool ProcessRecord(DeviceRecord* t_rec)
 {
   PoolMem record_str(PM_MESSAGE);
 

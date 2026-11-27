@@ -194,6 +194,11 @@ if(NOT client-only)
   )
 
   bareos_add_test(
+    attribs_test LINK_LIBRARIES Bareos::Lib Bareos::Findlib Bareos::SQL
+                                GTest::gtest_main
+  )
+
+  bareos_add_test(
     append_test LINK_LIBRARIES Bareos::Lib Bareos::SD Bareos::LibSD
                                Bareos::Findlib GTest::gtest_main
   )
@@ -280,8 +285,22 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+  if(NOT HAVE_WIN32 AND ndmp)
+    # ndmp_fhdb_helpers.cc pulls in the NDMP headers (ndmagents.h etc.), which
+    # are only built/usable when the ndmp/ subdirectory is configured; that
+    # never happens on Windows (see core/src/CMakeLists.txt: `if(NOT HAVE_WIN32
+    # AND ndmp)`).
+    bareos_add_test(
+      ndmp_fhdb_helpers_test
+      ADDITIONAL_SOURCES ../dird/ndmp_fhdb_helpers.cc
+      LINK_LIBRARIES ${LINK_LIBRARIES} bareosndmp
+    )
+  endif()
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
+  bareos_add_test(
+    record_test LINK_LIBRARIES Bareos::Lib Bareos::LibSD GTest::gtest_main
+  )
   bareos_add_test(
     runjob LINK_LIBRARIES Bareos::Dir Bareos::Findlib Bareos::SQL
                           GTest::gtest_main
@@ -459,7 +478,9 @@ if(NOT MSVC)
       ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
       ${PROJECT_SOURCE_DIR}/src/filed/filed_globals.cc
     LINK_LIBRARIES Bareos::Lib Bareos::Findlib GTest::gtest_main
+    COMPILE_DEFINITIONS FD_PLUGIN_DIR=\"$<TARGET_FILE_DIR:bpipe-fd>\"
   )
+  add_dependencies(test_fd_plugins bpipe-fd)
 endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
@@ -475,6 +496,7 @@ endif()
 bareos_add_test(
   test_output_formatter LINK_LIBRARIES GTest::gtest_main Bareos::Lib
 )
+bareos_add_test(stat_utils_test LINK_LIBRARIES GTest::gtest_main)
 
 if(NOT HAVE_BIG_ENDIAN)
   bareos_add_test(
