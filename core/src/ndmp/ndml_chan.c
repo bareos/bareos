@@ -582,9 +582,16 @@ int ndmos_chan_poll(struct ndmchan* chtab[], unsigned n_chtab, int milli_timo)
     if (!ch->check) continue;
 
     switch (ch->mode) {
+      case NDMCHAN_MODE_READ:
+        /* data may still be buffered after a hangup, EOF is detected
+         * by read() returning 0 */
+        if (pfdtab[n_pfdtab].revents & (POLLIN | POLLHUP | POLLERR)) {
+          ch->ready = 1;
+        }
+        break;
+
       case NDMCHAN_MODE_LISTEN:
       case NDMCHAN_MODE_READCHK:
-      case NDMCHAN_MODE_READ:
         if (pfdtab[n_pfdtab].revents & POLLIN) ch->ready = 1;
         if (pfdtab[n_pfdtab].revents & POLLHUP) ch->eof = 1;
         break;

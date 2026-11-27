@@ -1970,6 +1970,8 @@ Single file restore on incremental backups
    Unfortunately, it is currently (bareos-15.2.2) not possible to restore a chain of Full and Incremental backups at once.
    The workaround for that problem is to restore the full backup and each incremental each in a single restore operation.
 
+   With :config:option:`dir/job/Protocol`\ =NDMP_NATIVE, the |dir| recovers the images of all jobs of the chain that contain selected files one after another, oldest first.
+
 
 
 

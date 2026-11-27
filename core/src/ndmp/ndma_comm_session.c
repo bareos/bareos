@@ -37,6 +37,10 @@
 
 #include "ndmagents.h"
 
+#ifndef NDMOS_EFFECT_NO_SERVER_AGENTS
+#include <sys/wait.h>
+#endif
+
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
@@ -171,6 +175,16 @@ int ndma_server_session(struct ndm_session* sess, int control_sock)
 #endif
 
   ndmconn_destruct(conn);
+  /* already destructed, ndma_session_destroy() must not free it again */
+  sess->plumb.control = NULL;
+
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
+  /* NDMP requires the tape to be closed when the DMA disconnects without
+   * NDMP_TAPE_CLOSE, otherwise the tape simulator keeps its lockfile */
+  if (sess->tape_acb && sess->tape_acb->tape_fd >= 0) {
+    ndmos_tape_close(sess);
+  }
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   ndma_session_decommission(sess);
   ndma_session_destroy(sess);
@@ -178,8 +192,20 @@ int ndma_server_session(struct ndm_session* sess, int control_sock)
   return 0;
 }
 
+/* reap the terminated per-connection session children */
+static void ndma_daemon_reap_children(int sig)
+{
+  int saved_errno = errno;
+
+  (void)sig;
+  while (waitpid(-1, NULL, WNOHANG) > 0) continue;
+  errno = saved_errno;
+}
+
 int ndma_daemon_session(struct ndm_session* sess, int port)
 {
+  struct sigaction sa_chld;
+
   int listen_sock;
   int conn_sock, rc;
   socklen_t len;
@@ -207,10 +233,17 @@ int ndma_daemon_session(struct ndm_session* sess, int port)
     return 3;
   }
 
+  memset(&sa_chld, 0, sizeof sa_chld);
+  sa_chld.sa_handler = ndma_daemon_reap_children;
+  sigemptyset(&sa_chld.sa_mask);
+  sa_chld.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+  sigaction(SIGCHLD, &sa_chld, NULL);
+
   for (;;) {
     len = sizeof sa;
     conn_sock = accept(listen_sock, &sa, &len);
     if (conn_sock < 0) {
+      if (errno == EINTR) continue;
       perror("accept");
       close(listen_sock);
       return 4;
@@ -225,6 +258,7 @@ int ndma_daemon_session(struct ndm_session* sess, int port)
     }
 
     if (rc == 0) {
+      signal(SIGCHLD, SIG_DFL);
       close(listen_sock);
       ndma_server_session(sess, conn_sock);
       exit(0);
@@ -436,6 +470,18 @@ int ndma_session_destroy(struct ndm_session* sess)
   }
 
   ndmis_destroy(sess);
+
+  /* agents sharing one connection must not destruct it more than once */
+  if (sess->plumb.robot == sess->plumb.tape
+      || sess->plumb.robot == sess->plumb.data
+      || sess->plumb.robot == sess->plumb.control) {
+    sess->plumb.robot = NULL;
+  }
+  if (sess->plumb.tape == sess->plumb.data
+      || sess->plumb.tape == sess->plumb.control) {
+    sess->plumb.tape = NULL;
+  }
+  if (sess->plumb.data == sess->plumb.control) { sess->plumb.data = NULL; }
 
   if (sess->plumb.control) {
     ndmconn_destruct(sess->plumb.control);

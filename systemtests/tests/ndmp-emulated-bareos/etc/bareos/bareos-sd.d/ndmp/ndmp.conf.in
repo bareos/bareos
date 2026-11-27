@@ -1,0 +1,6 @@
+Ndmp {
+  Name = bareos-dir-ndmp                    # Can be any name but normally you should use the name of the Director here.
+  Username = "ndmpadmin"                    # Same username as you specified in the NDMP storage definition.
+  Password = "ndmppassword"                 # Same password as you specified in the NDMP storage definition.
+  AuthType = Clear                          # Clear == Clear Text, MD5 == Challenge protocol
+}

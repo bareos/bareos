@@ -727,15 +727,16 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog)
   fhdb_state = ((struct fhdb_state_mem*)nis->fhdb_state);
   fhdb_root = fhdb_state->fhdb_root;
   if (fhdb_root) {
-    if (nis->jcr->ar) {
+    {
       N_TREE_NODE *node, *parent;
       PoolMem fname, tmp;
 
       // Store the toplevel entry of the tree.
       Dmsg2(100, "==> %s [%s]\n", fhdb_root->fname, fhdb_root->attr);
-      NdmpStoreAttributeRecord(
-          nis->jcr, fhdb_root->fname, nis->virtual_filename, fhdb_root->attr,
-          fhdb_root->FileType, fhdb_root->inode, fhdb_root->Offset);
+      NdmpStoreAttributeRecord(nis->jcr, nis->FileIndex, fhdb_root->fname,
+                               nis->virtual_filename, fhdb_root->attr,
+                               fhdb_root->FileType, fhdb_root->inode,
+                               fhdb_root->Offset);
 
       // Store all the other entries in the tree.
       for (node = fhdb_root->first; node; node = node->next) {
@@ -759,7 +760,7 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog)
          * So we skip entries that do not have any attribute */
         if (node->attr) {
           Dmsg2(100, "==> %s [%s]\n", fname.c_str(), node->attr);
-          NdmpStoreAttributeRecord(nis->jcr, fname.c_str(),
+          NdmpStoreAttributeRecord(nis->jcr, nis->FileIndex, fname.c_str(),
                                    nis->virtual_filename, node->attr,
                                    node->FileType, node->inode, node->Offset);
         } else {

@@ -21,6 +21,9 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "functions-ndmjob" @ONLY ""
+  )
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
@@ -679,6 +682,7 @@ macro(prepare_test test_name test_srcdir test_dir)
   math(EXPR test_db_port "${BASEPORT} + 6")
   math(EXPR minio_port "${BASEPORT} + 7")
   math(EXPR restapi_port "${BASEPORT} + 8")
+  math(EXPR ndmjob_port "${BASEPORT} + 9")
 
   prepare_testdir_for_daemon_run()
 
