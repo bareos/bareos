@@ -1,4 +1,12 @@
 -- update db schema from 2250 to 2260
+
+-- dbconfig-common may select this migration by package version even when the
+-- catalog already has the target schema version.
+SELECT COALESCE(MAX(VersionId), 0) = 2260 AS schema_is_current FROM Version
+\gset
+
+\if :schema_is_current
+\else
 -- start transaction
 BEGIN;
 
@@ -23,7 +31,7 @@ $$ LANGUAGE 'plpgsql';
 ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
 ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
 
-CREATE INDEX job_starttime_idx ON job (StartTime);
+CREATE INDEX IF NOT EXISTS job_starttime_idx ON job (StartTime);
 
 DROP TABLE IF EXISTS basefiles;
 ALTER TABLE Job DROP COLUMN IF EXISTS HasBase;
@@ -34,3 +42,4 @@ UPDATE Version SET VersionId = 2260;
 COMMIT;
 SET client_min_messages = warning;
 ANALYZE;
+\endif
