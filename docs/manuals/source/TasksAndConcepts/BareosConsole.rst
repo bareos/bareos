@@ -503,8 +503,8 @@ create
 .. _section-bcommandConfigure:
 
 configure
-   Configures director resources during runtime. The first configure subcommands are
-   :bcommand:`configure add`\  and :bcommand:`configure export`\ .
+   Configures director resources during runtime. The configure subcommands are
+   :bcommand:`configure add`\ , :bcommand:`configure delete`\  and :bcommand:`configure export`\ .
    Other subcommands may follow in later releases.
 
    .. _section-bcommandConfigureAdd:
@@ -577,6 +577,93 @@ configure
          The same data is also used for :command:`bconsole` command line completion.
 
       Available since Bareos :sinceVersion:`16.2.4: configure add`.
+
+
+   .. _section-bcommandConfigureDelete:
+
+   configure delete
+      :index:`\ <single: Console; Command; configure delete>`
+
+      This command allows to delete resources during runtime. Usage:
+
+      .. code-block:: bconsole
+         :caption: configure delete usage
+
+         configure delete <resourcetype> name=<resourcename>
+         configure delete <resourcetype>=<resourcename>
+
+      Both spellings name the same resource, as they do for
+      :bcommand:`configure add`\ .
+
+      This feature requires :ref:`section-ConfigurationSubdirectories`.
+
+      The command removes the resource's configuration file at
+
+      :file:`<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf`
+
+      and then reloads the configuration, exactly as :bcommand:`reload`\  would.
+      The resource must therefore be defined in its own resource file: a resource
+      that is defined inline in :file:`bareos-dir.conf` cannot be deleted this way,
+      and the command will say so instead of reporting a removal that did not happen.
+
+      The file must define exactly the resource named on the command line. A file
+      written by :bcommand:`configure add`\  only ever contains the one resource,
+      but a hand-written one may contain several. If removing the file would remove
+      any other resource as well, or would not remove the named resource at all,
+      the deletion is rolled back: the file is moved back into place, the
+      configuration is reloaded again, and the command lists the other resources
+      the file defines. Move the resource into its own file first.
+
+      Because the deletion is enacted by a reload, it has all the effects of
+      :bcommand:`reload`\  and not just the removal of one resource. The whole
+      configuration is re-read from disk, so any other configuration change made
+      on disk since the last reload takes effect as well; the scheduler queue is
+      rebuilt and the catalog is re-checked. The command can consequently also
+      fail for reasons unrelated to the resource being deleted, and it is
+      rejected while another reload is already running. This is unlike
+      :bcommand:`configure add`\ , which only parses the single new resource
+      file.
+
+      If the resulting configuration does not parse, the deletion is rolled back:
+      the configuration file is moved back into place unchanged and the |dir|
+      keeps running with the previous configuration. As with :bcommand:`reload`\ ,
+      the parse errors themselves are written to the |dir| log rather than
+      reported on the console.
+
+      Jobs that are already running are unaffected. A running job keeps the
+      configuration it was started with until it ends, so a resource it uses
+      stays valid for the remainder of that job even after it has been deleted.
+      Only jobs started after the deletion no longer see the resource.
+
+      If another resource still references the resource to be deleted (for example
+      a Job resource that references a Client via its :config:option:`Dir/Job/Client`\
+      directive), the reload fails on the dangling reference and the deletion is
+      rolled back as described above; the |dir| log names the referencing resource.
+      There is no override for this: remove or update the referencing resource(s)
+      first (for example with :bcommand:`configure delete`\  on the referencing
+      Job), then delete the resource.
+
+      Deleting a Client also removes the |fd| export file that
+      :bcommand:`configure add`\  created for it below
+      :file:`<CONFIGDIR>/bareos-dir-export/client/`, since that file contains the
+      secret shared between the |dir| and the |fd|.
+
+      The console needs access to the :bcommand:`configure`\  command, and, for
+      resource types that have a corresponding ACL directive (Job, Client,
+      Storage, Schedule, Pool, FileSet and Catalog), access to the named resource
+      through that ACL. The remaining resource types -- among them Console, User,
+      Profile, Messages, Counter and JobDefs -- have no such directive, and deleting
+      them is therefore gated by access to the :bcommand:`configure`\  command alone,
+      just as creating them with :bcommand:`configure add`\  is. Access to
+      :bcommand:`configure`\  should be granted accordingly.
+
+      .. code-block:: bconsole
+         :caption: Example: deleting a client resource during runtime
+
+         *<input>configure delete client name=client2-fd</input>
+         Removed resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf".
+
+      Available since Bareos :sinceVersion:`26.0.0: configure delete`.
 
 
    .. _section-bcommandConfigureExport:
