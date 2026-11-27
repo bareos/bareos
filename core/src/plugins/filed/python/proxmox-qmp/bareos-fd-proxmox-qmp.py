@@ -591,7 +591,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return (
             os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "bareos_proxmox_qmp.py"
+                os.path.dirname(os.path.abspath(__file__)), "bareos-proxmox-qmp.py"
             ),
             op,
             qmppath,

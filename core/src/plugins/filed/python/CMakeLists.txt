@@ -159,7 +159,7 @@ if(ENABLE_PROXMOX_QMP_PLUGIN)
        proxmox-qmp/proxmox_qmp_nbd.py
   )
   install(
-    PROGRAMS proxmox-qmp/bareos_proxmox_qmp.py
+    PROGRAMS proxmox-qmp/bareos-proxmox-qmp.py
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )

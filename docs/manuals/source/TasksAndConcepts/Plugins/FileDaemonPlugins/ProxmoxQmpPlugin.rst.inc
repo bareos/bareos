@@ -198,7 +198,7 @@ upgraded from Incremental because no prior Full backup was found:
    [...] bareos-sd JobId 1: Labeled new Volume "Full-0001" on device "FileStorage0001" (/var/lib/bareos/storage).
    [...] bareos-sd JobId 1: Moving to end of data on volume "Full-0001"
    [...] bareos-sd JobId 1: Ready to append to end of Volume "Full-0001" size=225
-   [...] proxmox93-fd JobId 1: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos_proxmox_qmp.py backup /var/run/qemu-server/100.qmp none scsi0 - 10810 /var/lib/bareos
+   [...] proxmox93-fd JobId 1: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos-proxmox-qmp.py backup /var/run/qemu-server/100.qmp none scsi0 - 10810 /var/lib/bareos
    [...] proxmox93-fd JobId 1: python3-fd-mod: Backing up VM 100 disks with level F to virtual file @BQMP/100/disks-100-20261126_182629-F.bchunks
    [...] proxmox93-fd JobId 1: python3-fd-mod: waiting for command to finish
    [...] bareos-sd JobId 1: Releasing device "FileStorage0001" (/var/lib/bareos/storage).
@@ -269,7 +269,7 @@ The following Incremental backup uses the Full backup above:
    [...] bareos-sd JobId 2: Labeled new Volume "Incremental-0002" on device "FileStorage0001" (/var/lib/bareos/storage).
    [...] bareos-sd JobId 2: Moving to end of data on volume "Incremental-0002"
    [...] bareos-sd JobId 2: Ready to append to end of Volume "Incremental-0002" size=239
-   [...] proxmox93-fd JobId 2: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos_proxmox_qmp.py incr /var/run/qemu-server/100.qmp none scsi0 - 10810 /var/lib/bareos
+   [...] proxmox93-fd JobId 2: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos-proxmox-qmp.py incr /var/run/qemu-server/100.qmp none scsi0 - 10810 /var/lib/bareos
    [...] proxmox93-fd JobId 2: python3-fd-mod: Backing up VM 100 disks with level I to virtual file @BQMP/100/disks-100-20261126_182753-I.bchunks
    [...] proxmox93-fd JobId 2: python3-fd-mod: waiting for command to finish
    [...] bareos-sd JobId 2: Releasing device "FileStorage0001" (/var/lib/bareos/storage).
@@ -406,7 +406,7 @@ their original guest ID, 100:
    [...] proxmox93-fd JobId 3: python3-fd-mod: Restoring disks-100-20261126_182629-F.bchunks
    [...] proxmox93-fd JobId 3: python3-fd-mod: vm 100 does not exist, creating it
    [...] proxmox93-fd JobId 3: python3-fd-mod: Started qemu-storage-daemon at NBD port 10813 pid 2131
-   [...] proxmox93-fd JobId 3: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos_proxmox_qmp.py restore /var/run/qemu-server/100.qmp none scsi0:8589934592 - 10813 /var/lib/bareos
+   [...] proxmox93-fd JobId 3: python3-fd-mod: Executing /usr/lib/bareos/plugins/bareos-proxmox-qmp.py restore /var/run/qemu-server/100.qmp none scsi0:8589934592 - 10813 /var/lib/bareos
    [...] bareos-sd JobId 3: End of Volume at file 2 on device "FileStorage0001" (/var/lib/bareos/storage), Volume "Full-0001"
    [...] bareos-sd JobId 3: Ready to read from volume "Incremental-0002" on device "FileStorage0001" (/var/lib/bareos/storage).
    [...] bareos-sd JobId 3: Forward spacing Volume "Incremental-0002" to file:block 0:239.
