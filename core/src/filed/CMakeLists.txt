@@ -91,8 +91,9 @@ target_link_libraries(bareos-test-fd PRIVATE fd_objects_test CLI11::CLI11)
 if(HAVE_WIN32)
   target_sources(
     fd_objects_common
-    PRIVATE ../win32/filed/vss.cc ../win32/filed/vss_Vista.cc
-            ../win32/generic/service.cc ../win32/generic/main.cc
+    PRIVATE ../win32/filed/ntfs_filelist.cc ../win32/filed/vss.cc
+            ../win32/filed/vss_Vista.cc ../win32/generic/service.cc
+            ../win32/generic/main.cc
   )
   target_compile_definitions(fd_objects_common PUBLIC WIN32_VSS HAVE_VSS64)
 
