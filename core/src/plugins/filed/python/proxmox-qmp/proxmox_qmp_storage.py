@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2026 Bareos GmbH & Co. KG
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -135,9 +135,7 @@ class PVEStorageConfig:
                     f"Ceph configuration for storage {storage_id} is missing: {conf}"
                 )
             blockdev["server"] = self._parse_monitors(monhost)
-            blockdev["auth-client-required"] = [
-                "cephx" if has_keyring else "none"
-            ]
+            blockdev["auth-client-required"] = ["cephx" if has_keyring else "none"]
             if os.path.exists(conf):
                 blockdev["conf"] = conf
         else:
@@ -170,9 +168,7 @@ class PVEStorageConfig:
         export_name = "bqmp-" + node_name
 
         if storage_type == "rbd":
-            backing_node = self._rbd_blockdev(
-                node_name, storage_id, volume, options
-            )
+            backing_node = self._rbd_blockdev(node_name, storage_id, volume, options)
             return [
                 "--blockdev",
                 json.dumps(backing_node, separators=(",", ":")),
@@ -199,9 +195,7 @@ class PVEStorageConfig:
             backend_driver = "host_device"
             frontend_driver = "raw"
         elif "path" in options:
-            full_path = os.path.join(
-                options["path"], "images", volume
-            )
+            full_path = os.path.join(options["path"], "images", volume)
             backend_driver = "file"
             frontend_driver = self._file_format(volume)
         else:
