@@ -108,6 +108,8 @@ struct lexer {
   FILE* fd;               /* file descriptor */
   POOLMEM* line;          /* input line */
   POOLMEM* str;           /* string being scanned */
+  POOLMEM* peeked_line;   /* buffered lookahead line, if any */
+  bool has_peeked_line;   /* whether peeked_line holds the next input line */
   int str_len;            /* length of string */
   int str_max_len;        /* maximum length of string */
   int line_no;            /* file line number */
