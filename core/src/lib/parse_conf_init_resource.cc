@@ -79,7 +79,11 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(
         SetItemVariable<uint64_t>(*item, str_to_int64(item->default_value));
         break;
       case CFG_TYPE_SIZE64:
-        SetItemVariable<uint64_t>(*item, str_to_uint64(item->default_value));
+        if (!size_to_uint64(item->default_value,
+                            GetItemVariablePointer<uint64_t*>(*item))) {
+          Emsg2(M_ERROR_TERM, 0, T_("Invalid default value '%s' for %s\n"),
+                item->default_value, item->name);
+        }
         break;
       case CFG_TYPE_SPEED:
         SetItemVariable<uint64_t>(*item, str_to_uint64(item->default_value));
