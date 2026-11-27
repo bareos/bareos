@@ -63,6 +63,9 @@ The package ships a default template
 (for example :file:`/usr/lib/bareos/defaultconfigs/`), so administrators can
 copy and adapt it into :file:`/etc/bareos-webui-proxy/` when needed.
 When ``--config`` is used explicitly, the given file must exist.
+Every configuration file, with or without PAM settings, must meet the
+:ref:`webui-proxy-config-permissions` requirements. Missing implicit configuration
+still uses built-in defaults.
 
 Installation and access
 -----------------------
@@ -86,6 +89,31 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+Upgrading existing installations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+   Configuration access rights are now enforced for every existing proxy
+   configuration, including configurations without PAM settings. Previously
+   accepted modes such as ``0644`` for the INI file or ``0775`` for its
+   containing directory prevent the upgraded proxy from starting, making the
+   Vue WebUI unavailable.
+
+Before upgrading an installation with an active configuration file, check the
+proxy service account and apply the ownership and ``0640``/``0755`` permissions
+described in :ref:`webui-proxy-config-permissions`. Apply this to
+:file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`, or the file selected by
+``--config``, and its immediate containing directory. Preserve the existing
+configuration contents; replacing the file with the shipped template is not
+required.
+
+If the upgrade has already completed, correct the access rights before
+restarting :command:`bareos-webui-proxy`. Use the journal troubleshooting
+commands in :ref:`webui-proxy-config-permissions` if startup fails.
+Installations without an active implicit configuration file are unaffected
+and continue to use built-in defaults.
+
 Configuring multiple directors
 ------------------------------
 
@@ -97,6 +125,9 @@ template into place and add one section per Director:
 
    cp /usr/lib/bareos/defaultconfigs/bareos-webui-proxy.ini \
       /etc/bareos-webui-proxy/bareos-webui-proxy.ini
+
+Set ownership and permissions as described in
+:ref:`webui-proxy-config-permissions` before starting the proxy.
 
 Then edit :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`:
 
@@ -128,7 +159,7 @@ Once logged in to multiple Directors, the scope menu at the top of the page
 allows switching between them or viewing data from all Directors at once.
 
 ``[listen]`` section options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :widths: 35 15 50
@@ -158,7 +189,7 @@ allows switching between them or viewing data from all Directors at once.
      - Maximum concurrent connections that have not yet completed login.
 
 ``[<director>]`` section options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :widths: 35 15 50
@@ -180,6 +211,129 @@ allows switching between them or viewing data from all Directors at once.
    * - ``tls_psk_disable``
      - ``no``
      - Set to ``yes`` to disable TLS-PSK for this Director connection.
+       Not allowed with PAM Console settings.
+   * - ``pam_console_name``
+     - *(unset)*
+     - Name of the Director Console resource used for PAM authentication.
+       Set together with ``pam_console_password``.
+   * - ``pam_console_password``
+     - *(unset)*
+     - Shared password of the PAM Console resource, stored only on the proxy.
+       Users enter their individual PAM passwords, not this secret.
+
+PAM login
+---------
+
+Users log in through the normal Vue username/password form using their
+individual PAM credentials. Administrators configure the shared Console
+credentials on the proxy, so users never need to know or submit them.
+
+On the Director, configure a PAM-enabled Console and a User resource for each
+permitted PAM user:
+
+.. code-block:: bareosconfig
+
+   Console {
+     Name = "PamConsole"
+     Password = "<shared-console-secret>"
+     UsePamAuthentication = yes
+   }
+
+   User {
+     Name = "alice"
+     Profile = "webui-admin"
+   }
+
+Choose a Profile appropriate for that user's permissions. Configure the
+``bareos`` PAM service on the Director host, including authentication and
+account rules, as described in :doc:`/TasksAndConcepts/PAM`.
+
+On the proxy, add both Console settings to the corresponding Director section:
+
+.. code-block:: ini
+
+   [listen]
+   address = localhost
+   port = 9104
+
+   [production]
+   address = director.example.org
+   director_name = bareos-dir
+   tls_psk_disable = no
+   pam_console_name = PamConsole
+   pam_console_password = "<shared-console-secret>"
+
+The Console name/password must match the Director resource. Quote passwords
+containing ``#`` or ``;`` so they are not treated as comments. In quoted values,
+escape a literal double quote as ``\"`` and a backslash as ``\\``.
+Both settings must be nonempty; an incomplete pair or disabled TLS-PSK prevents
+proxy startup. A Console without ``UsePamAuthentication = yes`` cannot be used
+for this login mode.
+
+Select ``production`` in the Vue login form, then enter ``alice`` and Alice's
+PAM password. The Director authenticates Alice and applies her User/Profile
+permissions. Interactive PAM prompts and MFA conversations are not supported.
+Directors without the PAM settings continue to use Console name/password
+login. Reconnects use the user's credentials retained in proxy session memory;
+logout or session expiry removes them.
+
+.. _webui-proxy-config-permissions:
+
+Configuration file access rights
+--------------------------------
+
+Restrict the INI file to administrators and the proxy service account
+(mode ``0640`` or stricter, with the proxy's effective service group).
+The containing directory may have mode ``0755`` or stricter: group and other
+users may list and traverse it, but must not have write access. Its group does
+not need to match the service group. Both file and directory must be owned by
+root or the proxy's effective user. The file must have no other-user access
+or group write access. Executable configuration files and special mode bits
+on either the file or directory are rejected. If file group access is enabled,
+the group must match the proxy's effective group.
+These checks are enforced before parsing every configuration
+file, even without PAM settings; unsafe permissions prevent startup.
+Starting without an implicit configuration file still uses built-in defaults.
+
+For the usual ``bareos`` service group:
+
+.. code-block:: shell-session
+
+   chown root:bareos /etc/bareos-webui-proxy
+   chmod 0755 /etc/bareos-webui-proxy
+   chown root:bareos /etc/bareos-webui-proxy/bareos-webui-proxy.ini
+   chmod 0640 /etc/bareos-webui-proxy/bareos-webui-proxy.ini
+
+Check the installed service's account before choosing ownership:
+
+.. code-block:: shell-session
+
+   systemctl show bareos-webui-proxy -p User -p Group
+
+The proxy exits with a fatal error for unsafe configuration access rights. The message
+identifies the file or directory, its current octal mode and numeric owner/group,
+the failed requirement, and the recommended ``chmod 0640`` or ``chmod 0755``
+fix. Ownership/group errors also report the permitted service UID/GID.
+For example, a world-readable INI produces an ``unsafe configuration file``
+error with ``mode 0644`` and ``chmod 0640``. A group- or world-writable directory
+produces ``unsafe configuration directory`` and ``chmod 0755``.
+Neither message includes the Console password.
+
+If the service cannot open the file or directory at all, the error instead
+reports the affected path and operating-system reason, with a reminder to
+check the service's read/search permissions. Inspect service errors with:
+
+.. code-block:: shell-session
+
+   journalctl -u bareos-webui-proxy -n 50 --no-pager
+
+Configuration files and their immediate containing directory must not be
+symbolic links. The loader checks permissions on the opened file and directory,
+not a separate filename lookup. Non-PAM files have the same requirements.
+Do not place the file in the SPA's static directory.
+Restart :command:`bareos-webui-proxy` after
+editing it. Use HTTPS between the browser and web server as well as TLS-PSK
+between the proxy and Director.
 
 What is already available
 -------------------------
@@ -187,6 +341,7 @@ What is already available
 The technical preview already covers important day-to-day workflows, including:
 
 * login with Bareos console credentials
+* PAM login with server-configured Console credentials
 * dashboard views
 * job overview and job details
 * restore workflows, including plugin restore options

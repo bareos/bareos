@@ -258,9 +258,11 @@ TcpListener CreateMockDirectorListener()
 }
 
 std::thread StartMockDirectorSession(const TcpListener& listener,
-                                     std::string password)
+                                     std::string password,
+                                     bool require_pam = false)
 {
-  return std::thread([fd = listener.fd, password = std::move(password)]() {
+  return std::thread([fd = listener.fd, password = std::move(password),
+                      require_pam]() {
     const int peer = ::accept(fd, nullptr, nullptr);
     ASSERT_GE(peer, 0);
 
@@ -311,6 +313,17 @@ std::thread StartMockDirectorSession(const TcpListener& listener,
 
     const std::string auth_ok = read_frame();
     EXPECT_EQ(auth_ok, "1000 OK auth\n");
+
+    if (require_pam) {
+      write_frame(
+          "1001\x1e"
+          "PAM required");
+      EXPECT_EQ(read_frame(), "quit\n");
+      const int32_t terminate = htonl(BNET_TERMINATE);
+      WriteAll(peer, &terminate, sizeof(terminate));
+      ::close(peer);
+      return;
+    }
 
     write_frame("1000 OK: bareos-dir Version: 26.0.0\n");
     write_frame("1002 additional info\n");
@@ -622,6 +635,103 @@ TEST(ProxySession, RejectsUnsupportedWsMode)
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
   EXPECT_NE(GetJsonStringField(response, "message").find("unsupported mode"),
             std::string::npos);
+  ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
+TEST(ProxySession, RejectsSeparatePamCredentialFields)
+{
+  for (const std::string fields :
+       {R"("pam_username":"pam-user")", R"("pam_password":"pam-secret")",
+        R"("pam_username":null,"pam_password":"pam-secret")",
+        R"("pam_username":"pam-user","pam_password":42)",
+        R"("pam_username":"","pam_password":"pam-secret")",
+        R"("pam_username":"pam-user","pam_password":"")",
+        R"("pam_username":"bad\u001euser","pam_password":"pam-secret")",
+        R"("pam_username":"pam-user","pam_password":"bad\u0000secret")"}) {
+    const std::string body
+        = R"({"username":"admin","password":"console-secret",)" + fields + "}";
+    const std::string request
+        = "POST /api/session/directors/bareos-dir/login HTTP/1.1\r\n"
+          "Host: localhost\r\nContent-Type: "
+          "application/json\r\nContent-Length: "
+          + std::to_string(body.size()) + "\r\n\r\n" + body;
+    const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+    EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 400 Bad Request");
+    EXPECT_EQ(response.find("Set-Cookie:"), std::string::npos);
+    EXPECT_EQ(response.find("pam-secret"), std::string::npos);
+    EXPECT_EQ(response.find("console-secret"), std::string::npos);
+  }
+}
+
+TEST(ProxySession, PamFailureDoesNotReplaceExistingDirectorCredentials)
+{
+  const auto listener = CreateMockDirectorListener();
+  ProxyConfig config;
+  config.configured_directors.emplace(
+      "bareos-dir", DirectorTargetConfig{.address = "127.0.0.1",
+                                         .port = listener.port,
+                                         .name = "bareos-dir",
+                                         .tls_psk_disable = true});
+  const auto session_id = ProxyAuthSessionStore::CreateSession(
+      "original-console", "original-secret", "bareos-dir");
+  auto director = StartMockDirectorSession(listener, "secret", true);
+  const std::string body = R"({"username":"admin","password":"secret"})";
+  const std::string request
+      = "POST /api/session/directors/bareos-dir/login HTTP/1.1\r\n"
+        "Host: localhost\r\nContent-Type: application/json\r\nCookie: "
+        "bareos_proxy_session="
+        + session_id + "\r\nContent-Length: " + std::to_string(body.size())
+        + "\r\n\r\n" + body;
+  const auto response = ExchangeHttpRequest(config, request);
+  director.join();
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 401 Unauthorized");
+  EXPECT_EQ(response.find("Set-Cookie:"), std::string::npos);
+  EXPECT_EQ(response.find("pam-secret"), std::string::npos);
+  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
+  ASSERT_TRUE(session);
+  EXPECT_EQ(session->directors.at("bareos-dir").username, "original-console");
+  EXPECT_EQ(session->directors.at("bareos-dir").password, "original-secret");
+  ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
+TEST(ProxySession, RejectsMalformedPamUserCredentialsBeforeConnecting)
+{
+  ProxyConfig config;
+  config.configured_directors.emplace(
+      "pam-target", DirectorTargetConfig{.name = "bareos-dir",
+                                         .pam_console = PamConsoleConfig{
+                                             "PamConsole", "console-secret"}});
+  for (const std::string body :
+       {R"({"username":"","password":"pam-secret"})",
+        R"({"username":"pam-user","password":""})",
+        R"({"username":"bad\u001euser","password":"pam-secret"})",
+        R"({"username":"pam-user","password":"bad\u0000secret"})"}) {
+    const std::string request
+        = "POST /api/session/directors/pam-target/login HTTP/1.1\r\n"
+          "Host: localhost\r\nContent-Type: "
+          "application/json\r\nContent-Length: "
+          + std::to_string(body.size()) + "\r\n\r\n" + body;
+    const auto response = ExchangeHttpRequest(config, request);
+    EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 400 Bad Request");
+    EXPECT_EQ(response.find("Set-Cookie:"), std::string::npos);
+    EXPECT_EQ(response.find("pam-secret"), std::string::npos);
+    EXPECT_EQ(response.find("console-secret"), std::string::npos);
+  }
+}
+
+TEST(ProxySession, NeverReturnsStoredPamCredentialsInSessionInfo)
+{
+  const auto session_id = ProxyAuthSessionStore::CreateSession(
+      "pam-user", "pam-secret", "bareos-dir");
+  const std::string request
+      = "GET /api/session HTTP/1.1\r\nHost: localhost\r\nCookie: "
+        "bareos_proxy_session="
+        + session_id + "\r\n\r\n";
+  const auto response = ExchangeHttpRequest(ProxyConfig{}, request);
+  EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 200 OK");
+  EXPECT_NE(response.find("pam-user"), std::string::npos);
+  EXPECT_EQ(response.find("pam-secret"), std::string::npos);
+  EXPECT_EQ(response.find("console-secret"), std::string::npos);
   ProxyAuthSessionStore::RemoveSession(session_id);
 }
 

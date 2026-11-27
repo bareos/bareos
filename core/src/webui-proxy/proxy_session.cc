@@ -176,8 +176,11 @@ std::string NormalizeJsonTextImpl(std::string_view text)
 std::optional<std::string_view> JsonStringField(const json_t* object,
                                                 const char* key)
 {
-  const char* value = json_string_value(json_object_get(object, key));
-  return value ? std::optional<std::string_view>(value) : std::nullopt;
+  const auto* field = json_object_get(object, key);
+  const char* value = json_string_value(field);
+  return value ? std::optional<std::string_view>(
+                     std::string_view(value, json_string_length(field)))
+               : std::nullopt;
 }
 
 std::string_view RequireJsonStringField(const json_t* object, const char* key)
@@ -359,6 +362,17 @@ DirectorConfig BuildDirectorConfig(const ProxyConfig& config,
   DirectorConfig cfg;
   cfg.username = std::string(username);
   cfg.password = std::string(password);
+  if (target.pam_console) {
+    cfg.pam_credentials
+        = PamCredentials{std::string(username), std::string(password)};
+    if (!cfg.pam_credentials->IsValid()) {
+      throw std::invalid_argument(
+          "PAM username and password must be nonempty and contain no NUL or "
+          "record separator");
+    }
+    cfg.username = target.pam_console->name;
+    cfg.password = target.pam_console->password;
+  }
   cfg.json_mode = json_mode;
   cfg.director_name = target.name;
   cfg.host = target.address;
@@ -555,19 +569,18 @@ JsonPtr ParseJsonBody(const HttpRequest& request)
 {
   json_error_t error{};
   JsonPtr body(json_loadb(request.body.data(), request.body.size(), 0, &error));
-  if (!body) { throw std::runtime_error("Expected JSON request body"); }
+  if (!body) { throw std::invalid_argument("Expected JSON request body"); }
   return body;
 }
 
-DirectorConfig ConnectSessionDirector(const ProxyConfig& config,
-                                      std::string_view selector,
-                                      std::string_view username,
-                                      std::string_view password)
+void ConnectSessionDirector(const ProxyConfig& config,
+                            std::string_view selector,
+                            std::string_view username,
+                            std::string_view password)
 {
   DirectorConfig cfg
       = BuildDirectorConfig(config, selector, username, password, true);
   DirectorConnection::Connect(cfg);
-  return cfg;
 }
 
 void SendSessionMissingResponse(int fd, const HttpRequest& request)
@@ -603,8 +616,13 @@ void HandleSessionLoginRequest(int fd,
     JsonPtr body = ParseJsonBody(request);
     const auto username = RequireJsonStringField(body.get(), "username");
     const auto password = RequireJsonStringField(body.get(), "password");
-    const DirectorConfig cfg = ConnectSessionDirector(
-        config, requested_director, username, password);
+    if (json_object_get(body.get(), "pam_username")
+        || json_object_get(body.get(), "pam_password")) {
+      throw std::invalid_argument(
+          "Use username and password; PAM Console credentials belong in the "
+          "proxy configuration");
+    }
+    ConnectSessionDirector(config, requested_director, username, password);
 
     const auto existing_session_id = LookupSessionIdFromRequest(request);
     bool new_session = !existing_session_id.has_value();
@@ -628,10 +646,14 @@ void HandleSessionLoginRequest(int fd,
                       : std::nullopt;
 
     PROXY_LOG_INFO(peer, "stored session login for user=%s director=%s",
-                   cfg.username.c_str(), requested_director.c_str());
+                   std::string(username).c_str(), requested_director.c_str());
     SendJsonResponseWithCookie(
         fd, "HTTP/1.1 200 OK", JsonSessionInfo(*session),
         cookie ? std::optional<std::string_view>(*cookie) : std::nullopt);
+  } catch (const std::invalid_argument& ex) {
+    PROXY_LOG_WARN(peer, "invalid session login: %s", ex.what());
+    SendJsonResponseWithCookie(fd, "HTTP/1.1 400 Bad Request",
+                               JsonObject({{"message", ex.what()}}));
   } catch (const std::exception& ex) {
     const std::string_view message = ex.what();
     const bool authentication_failed = IsAuthenticationFailure(message);

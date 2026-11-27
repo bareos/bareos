@@ -6,6 +6,11 @@
 # director name by default. Set director_name only when the real
 # Bareos Director name differs from the section name.
 # Director address defaults to localhost and port defaults to 9101.
+# All config files require mode 0640 and directory mode 0755 or stricter,
+# owned by root or the service user. File group access requires the service group.
+# No group/other write or other-user file access is allowed. Unsafe permissions prevent
+# startup, even without PAM settings. Config and immediate directory symlinks
+# are not allowed.
 [listen]
 # address = localhost
 # port = 9104
@@ -19,6 +24,12 @@
 # port = 9101
 # director_name = bareos-dir
 # tls_psk_disable = no
+# To use PAM, configure both Console credentials here. Users then enter only
+# their PAM username/password in the WebUI. The Director Console must have
+# UsePamAuthentication = yes. TLS-PSK must remain enabled.
+# pam_console_name = PamConsole
+# pam_console_password = "<console-secret>"
+# Quote secrets containing # or ;. Restrict this file to the proxy service user.
 
 #[bareos-dir-site-b]
 #address = bareos-dir.site-b.example.com
