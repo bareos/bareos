@@ -33,7 +33,7 @@ export default defineConfig({
   workers: 1,
   outputDir: process.env.PLAYWRIGHT_ARTIFACTS_DIR || '.playwright-artifacts',
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173/',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173/bareos/',
     browserName: 'chromium',
     headless: true,
     screenshot: 'only-on-failure',

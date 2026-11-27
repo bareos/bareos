@@ -62,11 +62,6 @@ $\r$\n\
 [/INSTALLDIRECTOR]$\r$\n\
 [/DBADMINUSER=PostgreSQL database user]$\r$\n\
 [/DBADMINPASSWORD=PostgreSQL database password]$\r$\n\
-[/INSTALLWEBUI requires 'Visual C++ Redistributable for Visual Studio 2012 x86', sets /INSTALLDIRECTOR]$\r$\n\
-[/WEBUILISTENADDRESS=network address, default 127.0.0.1]$\r$\n\
-[/WEBUILISTENPORT=network port, default 9100]$\r$\n\
-[/WEBUILOGIN=login name, default admin]$\r$\n\
-[/WEBUIPASSWORD=password, default admin]$\r$\n\
 $\r$\n\
 [/INSTALLSTORAGE]$\r$\n\
 [/STORAGENAME=name]$\r$\n\
@@ -121,13 +116,6 @@ Var DbAdminUser
 # do we need to install Director/Storage (Cmdline setting)
 Var InstallDirector
 Var InstallStorage
-
-# Install the webui (cmdline setting)
-Var InstallWebUI
-Var WebUIListenAddress
-Var WebUIListenPort
-Var WebUILogin
-Var WebUIPassword
 
 # Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
@@ -215,9 +203,6 @@ Page custom getStorageParameters
 Page custom displayDirconfSnippet
 
 Function LaunchLink
-  StrCmp $InstallWebUI "no" skipLaunchWebui
-    ExecShell "open" "http://$WebUIListenAddress:$WebUIListenPort"
-  skipLaunchWebui:
   ExecShell "open" "http://www.bareos.com"
 FunctionEnd
 
@@ -463,7 +448,7 @@ skipmsgbox:
 !endif
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION} (${PRODUCT_PLATFORM}) ${SUBSCRIPTION_FEATURES_TEXT}"
-OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}-${CMAKE_CONFIG_TYPE}-unsigned.exe"
+OutFile "${CMAKE_SOURCE_DIR}\${PRODUCT_NAME}-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}-${CMAKE_CONFIG_TYPE}-unsigned.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -576,7 +561,6 @@ Section -StopDaemon
   # if the service doesnt exist, it fails and the installation
   # cannot start
   # so we use the shotgun:
-  nsExec::ExecToLog "net stop bareos-webui"
   KillProcWMI::KillProc "bareos-fd.exe"
   KillProcWMI::KillProc "bareos-sd.exe"
   KillProcWMI::KillProc "bareos-dir.exe"
@@ -606,34 +590,6 @@ Section -SetPasswords
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
-  # Configure webui
-
-  FileOpen $R1 $PLUGINSDIR\webui.sed w
-
-  FileWrite $R1 "s#/etc/bareos-webui/directors.ini#C:/ProgramData/Bareos/directors.ini#g$\r$\n"
-  FileWrite $R1 "s#/etc/bareos-webui/configuration.ini#C:/ProgramData/Bareos/configuration.ini#g$\r$\n"
-  FileWrite $R1 "s#;include_path = $\".;c.*#include_path = $\".;c:/php/includes;C:/Program Files/Bareos/bareos-webui/vendor/ZendFramework$\"#g$\r$\n"
-  FileWrite $R1 "s#;extension_dir.*ext$\"#extension_dir = $\"ext$\"#g$\r$\n"
-  FileWrite $R1 "s#;extension=gettext#extension=gettext#g$\r$\n"
-
-  # set username/password to bareos/bareos
-  FileWrite $R1 "s#user1#bareos#g$\r$\n"
-  FileWrite $R1 "s#CHANGEME#bareos#g$\r$\n"
-
-  # configure webui login
-  #  Name = admin
-  #  Password = "admin"
-  #
-  FileWrite $R1 "s#Name = admin#Name = $WebUILogin#g$\r$\n"
-  FileWrite $R1 "s#Password = $\"admin$\"#Password = $WebUIPassword#g$\r$\n"
-
-  FileClose $R1
-
-
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\php.ini"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\global.php"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\admin.conf"'
-
 SectionEnd
 
 
@@ -1054,102 +1010,6 @@ SectionIn 1 2
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
   File "${CMAKE_BINARY_DIR}\core\src\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf"
-SectionEnd
-
-
-Section "Bareos Webui" SEC_WEBUI
-   SectionIn 2
-   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
-   StrCpy $InstallWebUI "yes"
-   SetShellVarContext all
-   SetOutPath "$INSTDIR"
-   SetOverwrite ifnewer
-   File  "C:\ProgramData\Chocolatey\lib\nssm\tools\nssm.exe"
-
-   SetOutPath "$INSTDIR\bareos-webui\php"
-   File /r "${PHP_BASE_DIR}\*.*"
-
-   SetOutPath "$INSTDIR\bareos-webui"
-   File /r /x .gitignore "${CMAKE_SOURCE_DIR}\webui\*.*"
-
-#IfSilent skip_vc_redist_check
-#   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
-#   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-#   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-#check_for_vc_redist:
-#   ${If} $R1 == ""
-#      ${If} $R2 == ""
-#         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-#         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
-#                                 It is needed by the bareos-webui service.$\r$\n\
-#                                 Please install vcredist_x86.exe from $\r$\n\
-#                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
-#                                 and click OK when done." /SD IDOK
-#      ${EndIf}
-#   ${EndIf}
-#   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-#   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-#   ${If} $R1 == ""
-#      ${If} $R2 == ""
-#         goto check_for_vc_redist
-#	  ${EndIf}
-#   ${EndIf}
-#
-#skip_vc_redist_check:
-   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
-   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
-
-   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
-   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
-   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
-   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
-
-
-   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
-   # see https://nssm.cc/usage -> quoting issues
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
-      -S $WebUIListenAddress:$WebUIListenPort \
-      -c $\"$APPDATA\${PRODUCT_NAME}\php.ini$\" \
-      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"'
-   ExecWait '$INSTDIR\nssm.exe dump bareos-webui'
-
-   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
-                     "Description" "Bareos Webui php service"
-
-   nsExec::ExecToLog "net start Bareos-webui"
-
-   # Shortcuts
-   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
-   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
-
-   # WebUI Firewall
-
-   DetailPrint  "Opening Firewall for WebUI"
-   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-   # profile=[private,domain]"
-   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-   # profile=[private,domain]"
-
 SectionEnd
 
 
@@ -1583,28 +1443,10 @@ done:
   ${GetOptions} $cmdLineParams "/DBADMINUSER=" $DbAdminUser
   ClearErrors
 
-  ${GetOptions} $cmdLineParams "/WEBUILISTENADDRESS=" $WebUIListenAddress
-  ClearErrors
-
-  ${GetOptions} $cmdLineParams "/WEBUILISTENPORT=" $WebUIListenPort
-  ClearErrors
-
-  ${GetOptions} $cmdLineParams "/WEBUILOGIN=" $WebUILogin
-  ClearErrors
-
-  ${GetOptions} $cmdLineParams "/WEBUIPASSWORD=" $WebUIPassword
-  ClearErrors
-
   StrCpy $InstallDirector "yes"
   ${GetOptions} $cmdLineParams "/INSTALLDIRECTOR" $R0
   IfErrors 0 +2         # error is set if NOT found
     StrCpy $InstallDirector "no"
-  ClearErrors
-
-  StrCpy $InstallWebUI "yes"
-  ${GetOptions} $cmdLineParams "/INSTALLWEBUI" $R0
-  IfErrors 0 +2         # error is set if NOT found
-    StrCpy $InstallWebUI "no"
   ClearErrors
 
   StrCpy $InstallStorage "yes"
@@ -1640,14 +1482,6 @@ done:
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" "drops\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-grant.sql" "grants\postgresql.sql"
 
-  # webui
-  File "/oname=$PLUGINSDIR\php.ini" "${PHP_BASE_DIR}\php.ini-production"
-  !cd ${CMAKE_SOURCE_DIR}
-  File "/oname=$PLUGINSDIR\global.php" "webui\config\autoload\global.php"
-  File "/oname=$PLUGINSDIR\directors.ini" "webui\install\directors.ini"
-  File "/oname=$PLUGINSDIR\configuration.ini" "webui\install\configuration.ini"
-  File "/oname=$PLUGINSDIR\admin.conf"  "webui\install\bareos\bareos-dir.d\console\admin.conf.example"
-
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
@@ -1667,13 +1501,6 @@ done:
 
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
-  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
-
-  StrCmp $InstallWebUI "no" dontInstWebUI
-    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
-    StrCpy $InstallDirector "yes"               # webui needs director
-  dontInstWebUI:
-
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
     SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_SELECTED} # director firewall
@@ -1818,18 +1645,6 @@ AutoSelecPostgresIfAvailableEnd:
 
   strcmp $DbUser "" +1 +2
   StrCpy $DbUser "bareos"
-
-  strcmp $WebUIListenAddress "" +1 +2
-  StrCpy $WebUIListenAddress "127.0.0.1"
-
-  strcmp $WebUIListenPort "" +1 +2
-  StrCpy $WebUIListenPort "9100"
-
-  strcmp $WebUILogin "" +1 +2
-  StrCpy $WebUILogin "admin"
-
-  strcmp $WebUIPassword "" +1 +2
-  StrCpy $WebUIPassword "$\"admin$\""
 
   strcmp $DbEncoding "" +1 +2
   StrCpy $DbEncoding "ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
@@ -2084,12 +1899,6 @@ Section Uninstall
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
 
-  ExecWait '$INSTDIR\nssm.exe stop bareos-webui'
-  sleep 3000
-
-  ExecWait '$INSTDIR\nssm.exe remove bareos-webui confirm'
-  sleep 3000
-
   # be sure and also kill the other daemons
   KillProcWMI::KillProc "bareos-fd.exe"
   KillProcWMI::KillProc "bareos-sd.exe"
@@ -2110,11 +1919,6 @@ Section Uninstall
   RMDir /r "$APPDATA\${PRODUCT_NAME}\tray-monitor.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
   RMDir /r "$APPDATA\${PRODUCT_NAME}\bconsole.d"
-
-  Delete "$APPDATA\${PRODUCT_NAME}\php.ini"
-  Delete "$APPDATA\${PRODUCT_NAME}\directors.ini"
-  Delete "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\console\admin.conf"
 
 ConfDeleteSkip:
   # delete config files *.conf.old and *.conf.new, ...
@@ -2242,13 +2046,6 @@ ConfDeleteSkip:
   # traymon autostart
   Delete "$SMSTARTUP\bareos-tray-monitor.lnk"
 
-  ExecWait '$INSTDIR\nssm.exe stop bareos-webui'
-  ExecWait '$INSTDIR\nssm.exe remove bareos-webui confirm'
-  Delete "$INSTDIR\nssm.exe"
-  nsExec::ExecToLog "net stop bareos-webui"
-  RMDir /r "$INSTDIR\bareos-webui"
-
-
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   RMDir  "$SMPROGRAMS\${PRODUCT_NAME}"
@@ -2267,9 +2064,6 @@ ConfDeleteSkip:
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos storage daemon (bareos-sd) access$\""
     DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
-    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos WebUI access$\""
-    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos WebUI access$\""
-
   ${Else}
     DetailPrint  "Closing Firewall, OS is < Win7"
     DetailPrint  "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
@@ -2291,12 +2085,6 @@ SectionEnd
 Function .onSelChange
   Push $R0
   Push $R1
-
-  # Check if WEBUI was just selected then select SEC_DIR
-  SectionGetFlags ${SEC_WEBUI} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
-  SectionSetFlags ${SEC_DIR} $R0
 
   # if director is selected, we set InstallDirector to yes and select textconsole
   StrCpy $InstallDirector "no"

@@ -352,10 +352,11 @@ function currentDirectorError(error, fallbackMessage = '', { loginSucceeded = fa
   // show a specific message about WebSocket connection
   if (loginSucceeded && errorMsg?.includes('Could not connect to director')) {
     return toUserVisibleDirectorError(
-      t('WebSocket connection failed. Check proxy configuration or firewall.'),
+      errorMsg,
       {
         authenticationMessage: t('Authentication failed'),
-        connectionMessage: t('WebSocket connection failed'),
+        connectionMessage: t('WebSocket connection failed. Check proxy configuration or firewall.'),
+        securityPolicyHint: t('If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.'),
       }
     )
   }
@@ -363,6 +364,7 @@ function currentDirectorError(error, fallbackMessage = '', { loginSucceeded = fa
   return toUserVisibleDirectorError(errorMsg, {
     authenticationMessage: t('Authentication failed'),
     connectionMessage: t('Could not connect to director. Is the proxy running?'),
+    securityPolicyHint: t('If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.'),
   })
 }
 

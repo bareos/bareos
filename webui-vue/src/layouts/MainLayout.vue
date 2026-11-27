@@ -222,6 +222,7 @@
     </q-header>
 
     <q-page-container>
+      <InsecureConnectionBanner />
       <q-banner
         v-if="missingDirectorLogins.length > 0"
         class="bg-warning text-black q-ma-md rounded-borders"
@@ -276,6 +277,7 @@ import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import DirectorScopeMenuContent from '../components/DirectorScopeMenuContent.vue'
+import InsecureConnectionBanner from '../components/InsecureConnectionBanner.vue'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'

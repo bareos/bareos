@@ -1,5 +1,5 @@
 #
-# bareos-webui profile resource example: limited access
+# Bareos WebUI profile resource example: limited access
 #
 
 Profile {

@@ -536,7 +536,7 @@ class BareosBSock implements BareosBSockInterface
             $this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
 
             if (!$this->socket) {
-                throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
+                throw new ConnectionException("Error: " . $errstr . ", director seems to be down or blocking our request.", (int) $error);
             }
             stream_set_timeout($this->socket, self::DEFAULT_SOCKET_READ_TIMEOUT);
             // socket_set_nonblock($this->socket);

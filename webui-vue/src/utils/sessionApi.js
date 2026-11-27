@@ -24,6 +24,9 @@ import { API_BASE_URL } from './directorCommandSocket.js'
 export const SESSION_AUTH_PASSWORD = '__proxy_session__'
 
 async function parseJsonResponse(response) {
+  if ([502, 503, 504].includes(response.status)) {
+    throw new Error('Cannot connect to proxy')
+  }
   const text = await response.text()
   if (!text) {
     return null

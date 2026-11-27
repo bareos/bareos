@@ -833,6 +833,9 @@ msgstr ""
 msgid "Warning"
 msgstr ""
 
+msgid "This WebUI is using an insecure HTTP connection. Credentials and data may be exposed."
+msgstr ""
+
 #: ../module/Job/view/job/job/timeline.phtml:106
 #: ../module/Client/view/client/client/timeline.phtml:103
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:46

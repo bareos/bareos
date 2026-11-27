@@ -1,0 +1,9 @@
+#
+# Console for the Bareos WebUI
+#
+Console {
+  Name = admin
+  # Replace this placeholder with a unique, strong password before use.
+  Password = "CHANGE_ME"
+  Profile = "webui-admin"
+}

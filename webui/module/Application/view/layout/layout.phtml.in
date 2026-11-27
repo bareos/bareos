@@ -128,6 +128,12 @@ include 'version.php';
    </div>
 </nav>
 
+<?php if (!$this->isSecureConnection): ?>
+<div class="alert alert-warning" role="alert">
+   <?php echo $this->translate("This WebUI is using an insecure HTTP connection. Credentials and data may be exposed."); ?>
+</div>
+<?php endif; ?>
+
 <div class="container-fluid">
 <div class="row">
 <div class="col-md-12">
