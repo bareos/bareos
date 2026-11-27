@@ -441,8 +441,9 @@ class BQMPFacade:
 
     @staticmethod
     def _warn_full_disk_fallback(vdisk):
+        # Backup job status receives FD errors, but not FD warning counts.
         print(
-            f"WARNING: Disk {vdisk.disk_name} has no usable dirty bitmap; "
+            f"ERROR: Disk {vdisk.disk_name} has no usable dirty bitmap; "
             "this Incremental backup will back up the full disk.\n",
             file=sys.stderr,
         )
