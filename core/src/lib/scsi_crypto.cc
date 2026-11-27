@@ -28,6 +28,8 @@
 
 #include "include/bareos.h"
 
+#include <mutex>
+
 /* Forward referenced functions */
 
 static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent);
@@ -35,6 +37,10 @@ static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent);
 #include "lib/scsi_crypto.h"
 
 #ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
+
+namespace {
+std::mutex g_scsi_crypto_mutex;
+}  // namespace
 
 // Store a value as 2 bytes MSB/LSB
 static inline void set_2_byte_value(unsigned char* field, int value)
@@ -65,6 +71,7 @@ static inline void set_4_byte_value(unsigned char* field, int value)
  */
 bool ClearScsiEncryptionKey(int fd, const char* device_name)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   /* Create a SPOUT Set Encryption Key CDB and
    *        a SPOUT Clear Encryption Mode Page */
   SPP_SCSI_CDB cdb;
@@ -117,6 +124,7 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
  */
 bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   /* Create a SPOUT Set Encryption Key CDB and
    *        a SPOUT Send Encryption Key Page */
   SPP_SCSI_CDB cdb;
@@ -172,6 +180,7 @@ int GetScsiDriveEncryptionStatus(int fd,
                                  POOLMEM*& status,
                                  int indent)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_DES* spd;
@@ -366,6 +375,7 @@ int GetScsiVolumeEncryptionStatus(int fd,
                                   POOLMEM*& status,
                                   int indent)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_NBES* spnb;
@@ -522,6 +532,7 @@ int GetScsiVolumeEncryptionStatus(int fd,
  */
 bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_DES* spd;
@@ -587,6 +598,7 @@ bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
  */
 bool IsScsiEncryptionEnabled(int fd, const char* device_name)
 {
+  std::scoped_lock lock(g_scsi_crypto_mutex);
   SPP_SCSI_CDB cdb;
   SPP_PAGE_BUFFER cmd_page;
   SPP_PAGE_DES* spd;
@@ -645,7 +657,7 @@ int GetScsiVolumeEncryptionStatus(int,
 
 bool NeedScsiCryptoKey(int, const char*, bool) { return false; }
 
-bool GetScsiEncryptionEnabled(int, const char*) { return false; }
+bool IsScsiEncryptionEnabled(int, const char*) { return false; }
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */
 
 static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent)

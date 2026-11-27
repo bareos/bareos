@@ -368,6 +368,7 @@ static bRC do_set_scsi_encryption_key(void* value)
   lock_mutex(crypto_operation_mutex);
   if (SetScsiEncryptionKey(dev->fd, dev->archive_device_string, VolEncrKey)) {
     dev->SetCryptoEnabled();
+    dev->SetCryptoStatusSynced(true);
     unlock_mutex(crypto_operation_mutex);
     return bRC_OK;
   } else {
@@ -404,18 +405,22 @@ static bRC do_clear_scsi_encryption_key(void* value)
   if (!device_resource->drive_crypto_enabled) { return bRC_OK; }
 
   lock_mutex(crypto_operation_mutex);
-  /* See if we need to query the drive or use the tracked encryption status of
-   * the stored. */
+  /* When QueryCryptoStatus = No, avoid issuing SPIN(0x0020) and instead issue
+   * a single idempotent ClearScsiEncryptionKey once the device is open so any
+   * stale key left across a bareos-sd restart is cleared without probing
+   * unopened/empty drives. */
   if (device_resource->query_crypto_status) {
     need_to_clear
         = IsScsiEncryptionEnabled(dev->fd, dev->archive_device_string);
   } else {
-    need_to_clear = dev->IsCryptoEnabled();
+    need_to_clear = dev->IsCryptoEnabled()
+                    || (dev->IsOpen() && !dev->IsCryptoStatusSynced());
   }
   if (need_to_clear) {
     Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
     if (ClearScsiEncryptionKey(dev->fd, dev->archive_device_string)) {
       dev->ClearCryptoEnabled();
+      dev->SetCryptoStatusSynced(true);
       unlock_mutex(crypto_operation_mutex);
       return bRC_OK;
     } else {
@@ -423,6 +428,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
       return bRC_Error;
     }
   } else {
+    if (dev->IsOpen()) { dev->SetCryptoStatusSynced(true); }
     Dmsg0(debuglevel,
           "scsicrypto-sd: Not clearing crypto key because encryption is "
           "currently not enabled on drive\n");
