@@ -39,6 +39,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "http/http_server.h"
+
 namespace {
 
 constexpr int kListenBacklog = SOMAXCONN;
@@ -125,45 +127,15 @@ volatile std::sig_atomic_t g_proxy_shutdown_requested = 0;
 
 void RunProxyServer(const ProxyConfig& cfg)
 {
-  struct addrinfo hints{};
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-
-  struct addrinfo* res = nullptr;
-  const std::string port_str = std::to_string(cfg.port);
-  int rc = getaddrinfo(
-      cfg.bind_address.empty() ? nullptr : cfg.bind_address.c_str(),
-      port_str.c_str(), &hints, &res);
-  if (rc != 0) {
-    throw std::runtime_error(std::string("ProxyServer: getaddrinfo: ")
-                             + gai_strerror(rc));
-  }
-
   std::vector<FdGuard> listen_fds;
 
   // Bind a listen socket for every address returned (both IPv4 and IPv6 when
   // the host resolves to multiple addresses, e.g. "localhost" → 127.0.0.1 +
   // ::1).  This matches the Python websockets library behaviour and ensures
   // clients can always connect regardless of which protocol their browser uses.
-  for (const struct addrinfo* ai = res; ai != nullptr; ai = ai->ai_next) {
-    int fd = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-    if (fd < 0) { continue; }
-    FdGuard fd_guard(fd);
-
-    int opt = 1;
-    ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-    if (::bind(fd, ai->ai_addr, ai->ai_addrlen) == 0
-        && ::listen(fd, kListenBacklog) == 0) {
-      listen_fds.push_back(std::move(fd_guard));
-    }
-  }
-  freeaddrinfo(res);
-
-  if (listen_fds.empty()) {
-    throw std::runtime_error("ProxyServer: could not bind to any address for "
-                             + cfg.bind_address + ":" + port_str);
+  for (int fd : CreateHttpListenSockets(
+           cfg.bind_address, static_cast<uint16_t>(cfg.port), kListenBacklog)) {
+    listen_fds.emplace_back(fd);
   }
 
   PROXY_LOG_INFO("", "listening on ws://%s:%d (%zu socket(s))",

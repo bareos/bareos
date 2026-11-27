@@ -20,14 +20,11 @@
  */
 #include "http_protocol.h"
 
-#include "lib/bpoll.h"
-
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cerrno>
 #include <chrono>
-#include <cstring>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -187,24 +184,28 @@ void WaitForSocket(int fd,
                    Clock::time_point deadline,
                    std::string_view action)
 {
-  const auto wait_for_fd = [fd, events](int timeout_ms) {
-    if (events == POLLIN) { return WaitForReadableFd(fd, timeout_ms, true); }
-    if (events == POLLOUT) { return WaitForWritableFd(fd, timeout_ms, true); }
+  if (events != POLLIN && events != POLLOUT) {
     throw std::runtime_error("HTTP: unsupported wait event");
-  };
+  }
 
   while (true) {
-    switch (wait_for_fd(RemainingTimeoutMs(deadline))) {
-      case 1:
-        return;
-      case 0:
-        throw std::runtime_error("HTTP: timeout while waiting to "
-                                 + std::string(action));
-      case -1:
+    pollfd descriptor{fd, events, 0};
+    const int result = ::poll(&descriptor, 1, RemainingTimeoutMs(deadline));
+    if (result > 0) {
+      if (descriptor.revents & events) { return; }
+      if (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) {
         throw std::runtime_error("HTTP: socket error while waiting to "
                                  + std::string(action));
-      default:
-        throw std::runtime_error("HTTP: invalid wait result");
+      }
+      continue;
+    }
+    if (result == 0) {
+      throw std::runtime_error("HTTP: timeout while waiting to "
+                               + std::string(action));
+    }
+    if (errno != EINTR) {
+      throw std::runtime_error("HTTP: socket error while waiting to "
+                               + std::string(action));
     }
   }
 }

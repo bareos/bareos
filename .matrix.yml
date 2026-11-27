@@ -1,3 +1,17 @@
+PACKAGE_TEST_POLICY:
+  NEWEST_FEDORA_ONLY: true
+  EXCLUDE:
+    - '^Ubuntu_24[.]04[.]'
+    - '^SUSE_.*@openSUSE-'
+    - '^EL_9[.].*@Stream-'
+    - '^ULC_rpm_.*@Mageia-'
+    - '^ULC_deb_.*@Ubuntu-'
+    - '^FreeBSD_13[.]'
+  WEBUI_FULL:
+    - '^Ubuntu_26[.]04[.]x86_64$'
+    - '^EL_9[.]x86_64@RHEL-'
+    - '^SUSE_15[.]x86_64@SLE-15_SP7-'
+
 OS:
   Sanitize:
     "F45":

@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-#include "../ws_codec.h"
+#include "ws_codec.h"
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -220,6 +220,52 @@ TEST(WsCodec, HandshakePreservesBufferedFrameData)
   EXPECT_EQ(codec.RecvMessage(), "A");
 }
 
+TEST(WsCodec, HandshakeWithParsedHeadersPreservesBufferedFrameData)
+{
+  SocketPair sockets;
+  const auto frame = BuildMaskedFrame(0x1u, "A");
+
+  WsCodec codec = WsCodec::Accept(sockets.local(), kValidHandshakeRequest,
+                                  frame, std::chrono::milliseconds(50),
+                                  std::chrono::milliseconds(50));
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
+            std::string::npos);
+  EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, UpgradedConnectionReadsBufferedFrameData)
+{
+  SocketPair sockets;
+  const auto frame = BuildMaskedFrame(0x1u, "A");
+
+  auto codec = WsCodec::FromUpgradedConnection(sockets.local(), frame);
+  EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, UpgradedConnectionRejectsOversizedFrame)
+{
+  SocketPair sockets;
+  constexpr uint64_t oversized_payload = 1025;
+  const std::array<unsigned char, 10> header{
+      0x81,
+      127,
+      static_cast<unsigned char>(oversized_payload >> 56),
+      static_cast<unsigned char>(oversized_payload >> 48),
+      static_cast<unsigned char>(oversized_payload >> 40),
+      static_cast<unsigned char>(oversized_payload >> 32),
+      static_cast<unsigned char>(oversized_payload >> 24),
+      static_cast<unsigned char>(oversized_payload >> 16),
+      static_cast<unsigned char>(oversized_payload >> 8),
+      static_cast<unsigned char>(oversized_payload),
+  };
+  WriteAll(sockets.peer(), header.data(), header.size());
+
+  auto codec = WsCodec::FromUpgradedConnection(
+      sockets.local(), {}, std::chrono::milliseconds(50), 1024, 1024);
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
+}
+
 TEST(WsCodec, RejectsOversizedSingleFramePayload)
 {
   SocketPair sockets;
@@ -268,4 +314,60 @@ TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)
   } catch (const std::runtime_error& error) {
     EXPECT_NE(std::string(error.what()).find("timeout"), std::string::npos);
   }
+}
+
+TEST(WsCodec, ReassemblesFragmentedTextMessage)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto first = BuildMaskedFrame(0x1u, "hello ", false);
+  const auto continuation = BuildMaskedFrame(0x0u, "world");
+  WriteAll(sockets.peer(), first.data(), first.size());
+  WriteAll(sockets.peer(), continuation.data(), continuation.size());
+
+  EXPECT_EQ(codec.RecvMessage(), "hello world");
+}
+
+TEST(WsCodec, RepliesToPingBeforeReceivingNextMessage)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto ping = BuildMaskedFrame(0x9u, "keepalive");
+  const auto text = BuildMaskedFrame(0x1u, "message");
+  WriteAll(sockets.peer(), ping.data(), ping.size());
+  WriteAll(sockets.peer(), text.data(), text.size());
+
+  EXPECT_EQ(codec.RecvMessage(), "message");
+  const auto pong = ReadSome(sockets.peer());
+  ASSERT_EQ(pong.size(), 11u);
+  EXPECT_EQ(static_cast<uint8_t>(pong[0]), 0x8Au);
+  EXPECT_EQ(static_cast<uint8_t>(pong[1]), 9u);
+  EXPECT_EQ(pong.substr(2), "keepalive");
+}
+
+TEST(WsCodec, RepliesToCloseAndMarksConnectionClosed)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto close = BuildMaskedFrame(0x8u, "");
+  WriteAll(sockets.peer(), close.data(), close.size());
+
+  EXPECT_TRUE(codec.RecvMessage().empty());
+  EXPECT_TRUE(codec.IsClosed());
+  const auto response = ReadSome(sockets.peer());
+  ASSERT_EQ(response.size(), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(response[0]), 0x88u);
+  EXPECT_EQ(static_cast<uint8_t>(response[1]), 0u);
 }
