@@ -1586,6 +1586,10 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
             case COMPRESS_LZO1X:
               break;
 #endif
+#if defined(HAVE_ZSTD)
+            case COMPRESS_ZSTD:
+              break;
+#endif
             case COMPRESS_FZFZ:
             case COMPRESS_FZ4L:
             case COMPRESS_FZ4H:

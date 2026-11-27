@@ -427,9 +427,11 @@ static void DoExtract(char* devname,
 
   g_jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
 
-  uint32_t decompress_buf_size;
+  uint32_t decompress_buf_size = 0;
 
-  SetupDecompressionBuffers(g_jcr, &decompress_buf_size);
+  if (!SetupDecompressionBuffers(g_jcr, &decompress_buf_size)) {
+    Emsg0(M_ERROR_TERM, 0, T_("Failed to set up decompression buffers.\n"));
+  }
   if (decompress_buf_size > 0) {
     // See if we need to create a new compression buffer or make sure the
     // existing is big enough.

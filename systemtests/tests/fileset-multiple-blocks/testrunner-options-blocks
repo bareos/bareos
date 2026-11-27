@@ -74,11 +74,10 @@ check_restore_diff ${BackupDirectory}/data3
 check_restore_diff ${BackupDirectory}/data4
 check_restore_diff ${BackupDirectory}/data5
 check_restore_diff ${BackupDirectory}/data6
-check_restore_diff ${BackupDirectory}/data7
-if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data8 ]; then
-  set_error "Directory data8 has been restored, however it should be excluded from the backup."
+if [[ "${HAVE_ZSTD}" = "1" ]]; then
+  check_restore_diff ${BackupDirectory}/data7
+  check_restore_diff ${BackupDirectory}/data8
 fi
-#check_restore_diff ${BackupDirectory}/data9
 if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data9 ]; then
   set_error "Directory data9 has been restored, however it should be excluded from the backup."
 fi
@@ -96,8 +95,11 @@ check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data4/tes
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data5/test.dat" "fz4l"
 #lz4hc
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data6/test.dat" "fz4h"
-# Warning: LZ4 compression support requested in fileset but not available on this platform. Disabling ...
-#check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" "LZ4"
+if [[ "${HAVE_ZSTD}" = "1" ]]; then
+  #zstd
+  check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data7/test.dat" "zstd" "3"
+  check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data8/test.dat" "zstd" "19"
+fi
 
 # end tests and check for error codes
 end_test

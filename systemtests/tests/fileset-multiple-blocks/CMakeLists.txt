@@ -18,4 +18,11 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+
+if(HAVE_ZSTD)
+  set(ZSTD_COMMENT "")
+else()
+  set(ZSTD_COMMENT "#")
+endif()
+
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
