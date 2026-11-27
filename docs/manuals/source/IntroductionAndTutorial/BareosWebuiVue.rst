@@ -67,8 +67,9 @@ Installation and access
 -----------------------
 
 The Vue WebUI is installed separately from the classic PHP WebUI via the
-:file:`bareos-webui-vue` package, which provides :file:`bareos-webui`, and keeps
-its own Apache configuration file :file:`bareos-webui-vue.conf`.
+:file:`bareos-webui-vue` package and keeps its own Apache configuration file
+:file:`bareos-webui-vue.conf`. In Bareos 26, installing
+:file:`bareos-webui` selects the Vue WebUI.
 The classic PHP WebUI package is named :file:`bareos-webui-php`; its URL and
 installation directory remain unchanged.
 
