@@ -26,6 +26,7 @@
 """A Bareos plugin for qemu-based VMs using the QMP protocol"""
 
 import os
+import stat
 import subprocess
 import threading
 import time
@@ -731,7 +732,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if not self._vm_is_running():
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    f"vm {guest_name} does not exist or is not running.",
+                    f"vm {guest_name} does not exist or is not running.\n",
                 )
                 return bareosfd.bRC_Error
 
@@ -756,7 +757,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                'Could net get stat-info for file %s: "%s"' % (self.conffile, e),
+                'Could net get stat-info for file %s: "%s"\n' % (self.conffile, e),
             )
             return bareosfd.bRC_Error
 
@@ -777,7 +778,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "VM configuration file has invalid type %s" % (self.conffile),
+                "VM configuration file has invalid type %s\n" % (self.conffile),
             )
             return bareosfd.bRC_Error
 
@@ -788,7 +789,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if mystatp.st_mtime > last_job_time:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    "VM configuration has changed, please run a full backup.",
+                    "VM configuration has changed, please run a full backup.\n",
                 )
                 return bareosfd.bRC_Error
 
@@ -875,7 +876,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             storage = get_vol_storage(diskconf)
             args.extend(storage_cfg.get_qsd_args(d, storage))
 
-        bareosfd.DebugMessage(100, f"running qemu-storage-daemon: {" ".join(args)} ")
+        bareosfd.DebugMessage(100, f"running qemu-storage-daemon: {" ".join(args)}\n")
 
         self.qsd_process = subprocess.Popen(args)
         # give qemu storage daemon chance to start
@@ -896,6 +897,22 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def create_file(self, restorepkt):
         """Create file during restore"""
         bareosfd.DebugMessage(100, f"create_file() called with {restorepkt}\n")
+
+        if self.options.restoretodisk:
+            path = self.options.restorepath
+            try:
+                path_stat = os.stat(path)
+            except OSError as e:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    f"Cannot access restore directory '{path}': {e.strerror}\n",
+                )
+                return bareosfd.bRC_Error
+            if not stat.S_ISDIR(path_stat.st_mode):
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL, f"Restore path '{path}' is not a directory.\n"
+                )
+                return bareosfd.bRC_Error
 
         restorepkt.create_status = bareosfd.CF_EXTRACT
 
@@ -938,7 +955,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "invalid restore file (need .conf or .bchunks)",
+                "invalid restore file (need .conf or .bchunks)\n",
             )
             return bareosfd.bRC_Error
 
@@ -1053,7 +1070,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         ro_suffix = ".conf.ro"
         if not rop.object_name.endswith(ro_suffix):
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}"
+                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}\n"
             )
             return bareosfd.bRC_Error
 
@@ -1063,7 +1080,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         guestid = guestid[: -len(ro_suffix)]
         if not guestid.isdigit():
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}"
+                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}\n"
             )
             return bareosfd.bRC_Error
 
@@ -1103,7 +1120,8 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         bareosfd.JobMessage(
-            bareosfd.M_FATAL, "VM configuration has changed, please run a full backup."
+            bareosfd.M_FATAL,
+            "VM configuration has changed, please run a full backup.\n",
         )
         return bareosfd.bRC_Error
 
