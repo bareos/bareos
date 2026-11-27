@@ -1,3 +1,5 @@
 @plugindir@/bareos-fd-proxmox-qmp.py
 @plugindir@/bareos-proxmox-qmp.py
+@plugindir@/proxmox_qmp_storage.py
 @plugindir@/proxmox_qmp_nbd.py
+/usr/sbin/bareos-qmp-tool.py

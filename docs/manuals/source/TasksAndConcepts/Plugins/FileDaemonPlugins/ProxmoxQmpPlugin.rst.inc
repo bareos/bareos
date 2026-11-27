@@ -19,13 +19,53 @@ Differential backups and container guests are not supported.
 Restores operate on whole disks; individual files inside a guest cannot be
 selected for restore.
 
+The plugin backs up the VM configuration and supported disk devices, but does
+not back up the data volume configured as ``tpmstate0``. If the VM relies on
+TPM-sealed keys or other virtual TPM state, preserve that state separately;
+this plugin's backup alone is not sufficient to recover it.
+
 The plugin uses QEMU dirty bitmaps to track changes for incremental backups.
-Keep the Full backup and all subsequent Incremental backups needed for a
-restore. Start a new Full backup if the bitmap is lost or becomes inconsistent,
-for example after a VM restart when its storage does not support persistent
-bitmaps. After a migration or storage rollback, verify that the bitmaps remain
-valid or start a new Full backup. Do not assume that an Incremental backup
-automatically falls back to a Full backup in these cases.
+It requests persistent bitmaps, which QEMU stores in qcow2 images, and falls
+back to transient bitmaps when the disk format does not support persistence.
+Raw disks, including typical LVM-backed VM disks, use transient bitmaps. These
+include VM disks on Proxmox ``zfspool`` storage (raw ZFS zvols) and standard
+``rbd`` storage (raw Ceph RBD images). These bitmaps exist only in the QEMU
+process and are lost when that process exits. The storage backend alone does
+not determine bitmap persistence: for example, a qcow2 file on a
+ZFS-backed directory storage can support persistent bitmaps. An in-guest
+reboot that leaves QEMU running does not by itself lose a transient bitmap;
+stopping and restarting the VM, or otherwise restarting its QEMU process,
+does.
+
+If an Incremental backup finds a bitmap missing or inconsistent, the plugin
+recreates it and reads that disk in full during the Incremental job. Other
+disks can still be backed up incrementally. This establishes a new bitmap
+baseline for the affected disk. The job log warns when a disk is backed up in
+full this way. If you suspect an earlier Incremental was created after bitmap
+loss by a plugin version that did not do this full read, run a new Full backup
+before relying on that backup chain. After migration or storage rollback,
+verify that the bitmaps remain present and consistent. Keep the Full backup and
+all subsequent Incremental backups needed for a restore.
+See the `QEMU dirty bitmap documentation
+<https://www.qemu.org/docs/master/interop/bitmaps.html>`_ for details on
+persistent and transient bitmaps.
+
+To inspect bitmap state, run ``bareos-qmp-tool.py`` on the Proxmox node as
+``root`` while the VM is running and no backup is in progress. Replace ``100``
+with the VM ID:
+
+.. code-block:: sh
+
+   bareos-qmp-tool.py bitmap-status --vmid 100
+
+The tool automatically checks the disk nodes supported by the plugin. It
+reports whether each ``bqmp-bitmap`` is present, consistent, recording, and
+persistent. A missing or inconsistent bitmap makes the command return a
+nonzero status; ``persistent: false`` is informational and means the bitmap
+will be lost when the QEMU process exits. Use ``--socket`` for a non-default
+QMP socket path, or ``--json`` for machine-readable output. If a bitmap was
+lost when QEMU restarted, the next Incremental reads that disk in full and
+creates a new bitmap baseline.
 
 Requirements
 ^^^^^^^^^^^^
@@ -34,6 +74,13 @@ Install the |fd| and plugin on the |proxmox ve| node running the VM.
 The VM must be running during backup, and the |fd| must be able to access
 its QMP socket and Proxmox configuration. The plugin uses ``qm``,
 ``qemu-img`` and ``qemu-storage-daemon`` on the node.
+
+For restore destinations, the plugin supports file-backed storage with
+``raw`` or ``qcow2`` images, LVM/LVM-thin, ZFS zvols, and Ceph RBD using
+QEMU's librbd driver. Ceph RBD storage must have ``krbd`` disabled. The QSD
+process uses the Proxmox Ceph configuration and per-storage credentials, so
+ensure its RBD driver is available and the |fd| can access the configuration
+and keyring files and reach the Ceph monitors.
 
 The plugin creates temporary QCOW2 snapshot files in ``snapshotpath``.
 The directory must exist, be writable by the |fd| and have enough free space

@@ -426,10 +426,26 @@ class BQMPFacade:
             await self.add_snapshot_export(vdisk.disk_name)
             export = (get_snap_export_name(vdisk.disk_name), vdisk.size)
             nbd_addr = ("127.0.0.1", self.nbd_port)
+            if incremental and vdisk.requires_full:
+                self._warn_full_disk_fallback(vdisk)
+            disk_incremental = incremental and not vdisk.requires_full
             proxmox_qmp_nbd.read_nbd_image(
-                index, export, nbd_addr, "bqmp-bitmap", backing_store, incremental
+                index,
+                export,
+                nbd_addr,
+                "bqmp-bitmap",
+                backing_store,
+                disk_incremental,
             )
             index += 1
+
+    @staticmethod
+    def _warn_full_disk_fallback(vdisk):
+        print(
+            f"WARNING: Disk {vdisk.disk_name} has no usable dirty bitmap; "
+            "this Incremental backup will back up the full disk.\n",
+            file=sys.stderr,
+        )
 
     async def end_snapshot_backup(self):
         for d in self.selected_disks:
@@ -514,6 +530,7 @@ class BQMPFacade:
             targetnode = targetnodes[i][0]
             disk = self.get_virtual_node(srcnode)
             if disk.requires_full:
+                self._warn_full_disk_fallback(disk)
                 self._add_full_action(srcnode, targetnode, args["actions"])
             else:
                 self._add_incr_action(srcnode, targetnode, args["actions"])

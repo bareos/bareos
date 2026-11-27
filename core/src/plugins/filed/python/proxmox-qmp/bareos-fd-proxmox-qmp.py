@@ -48,6 +48,7 @@ from select import poll, POLLIN
 from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
 import bareosfd  # pylint: disable=import-error
 import BareosFdPluginBaseclass  # pylint: disable=import-error
+from proxmox_qmp_storage import PVEStorageConfig
 
 lockfile = "/var/lib/bareos/bqmp.state"
 
@@ -98,72 +99,6 @@ def release_port(port):
             write_ports(f, ports)
         finally:
             flock(f, LOCK_UN)
-
-
-class PVEStorageConfig:
-    """wrapper for PVE storage configuration"""
-
-    STORAGE_CFG = "/etc/pve/storage.cfg"
-
-    def __init__(self):
-        self.storages = {}
-
-    def parse_config(self):
-        with open(self.STORAGE_CFG) as f:
-            for line in f:
-                if len(line) > 0:
-                    parts = line.strip().split(" ")
-                    if parts[0].endswith(":"):
-                        in_subsection = True
-                        name = parts[1]
-                        storage_type = parts[0][:-1]
-                    elif in_subsection:
-                        if len(parts) < 2:
-                            in_subsection = False
-                            continue
-                        if parts[0] == "name":
-                            name = parts[1]
-                        if parts[0] == "path":
-                            self.storages[name] = parts[1] + "/images/"
-                        if parts[0] == "vgname":
-                            self.storages[name] = "/dev/" + parts[1] + "/"
-
-    def _get_full_path(self, storage_name, path):
-        if storage_name in self.storages:
-            return self.storages[storage_name] + path
-        else:
-            return path
-
-    def _activate_lv(self, path):
-        if not os.path.exists(path):
-            subprocess.run(["/usr/sbin/lvchange", "-ay", path])
-
-    def _guess_qsd_driver(self, path):
-        if path.startswith("/dev/"):
-            self._activate_lv(path)
-            return ("host_device", "raw")
-        elif path.startswith("/"):
-            return ("file", "qcow2")
-        else:
-            return (None, None)
-
-    def get_qsd_args(self, node_name, pve_diskspec):
-        parts = pve_diskspec.split(":", 1)
-        if len(parts) < 2:
-            raise Exception("invalid storage spec")
-        storage_type, storage_path = parts
-        export_name = "bqmp-" + node_name
-        full_path = self._get_full_path(storage_type, storage_path)
-        back_driver, front_driver = self._guess_qsd_driver(full_path)
-        args = [
-            "--blockdev",
-            f"driver={back_driver},node-name=file_{node_name},filename={full_path},cache.direct=on",
-            "--blockdev",
-            f"driver={front_driver},node-name={node_name},file=file_{node_name}",
-            "--export",
-            f"type=nbd,id={export_name},node-name={node_name},name={export_name},writable=on",
-        ]
-        return args
 
 
 def parse_vol_size_gb(s):
