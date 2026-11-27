@@ -1,6 +1,6 @@
 Ndmp {
-  Name = bareos-dir-isilon                  # Can be any name but normally you should use the name of the Director here.
+  Name = bareos-dir                         # Can be any name but normally you should use the name of the Director here.
+  AuthType = @ndmp_data_agent_auth_type@    # Clear == Clear Text, MD5 == Challenge protocol
   Username = "@ndmp_data_agent_user@"       # Same username as you specified in the NDMPFile storage definition.
   Password = "@ndmp_data_agent_password@"   # Same password as you specified in the NDMPFile storage definition.
-  AuthType = Clear                          # Clear == Clear Text, MD5 == Challenge protocol
 }
