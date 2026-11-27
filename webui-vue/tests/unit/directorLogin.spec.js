@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   directorListLoadErrorMessage,
   getLastSuccessfulDirector,
+  planMultiDirectorLoginOutcome,
   shouldAutoLoginAllDirectors,
   summarizeDirectorLoginAttempts,
 } from '../../src/utils/directorLogin.js'
@@ -32,14 +33,23 @@ describe('director login helpers', () => {
     message.replace('{message}', String(values.message ?? ''))
   )
 
-  it('formats the list_directors load error with the concrete cause', () => {
+  it('explains when the webui proxy cannot load configured directors', () => {
+    expect(directorListLoadErrorMessage(new Error('Failed to load directors'), t))
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
     expect(directorListLoadErrorMessage(new Error('Cannot connect to proxy'), t))
-      .toBe('Director list request failed: Cannot connect to proxy')
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
+    expect(directorListLoadErrorMessage(new Error('Timed out while loading directors'), t))
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
   })
 
-  it('falls back to an unknown error message when needed', () => {
+  it('explains when the director-list request has no error detail', () => {
     expect(directorListLoadErrorMessage(null, t))
-      .toBe('Director list request failed: Unknown error')
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
+  })
+
+  it('preserves an unexpected director-list error', () => {
+    expect(directorListLoadErrorMessage(new Error('Invalid proxy response'), t))
+      .toBe('Director list request failed: Invalid proxy response')
   })
 
   it('enables automatic all-director login only for the main login flow', () => {
@@ -84,5 +94,59 @@ describe('director login helpers', () => {
       { director: 'bareos-dir', success: false, message: 'Connection error' },
       { director: 'site-b', success: false, message: 'Connection error' },
     ])).toBe('')
+  })
+
+  describe('planMultiDirectorLoginOutcome', () => {
+    it('redirects immediately once every configured director succeeds', () => {
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: ['bareos-dir', 'site-b'],
+        failedAttempts: [],
+      })).toEqual({
+        finalDirector: 'site-b',
+        remainingDirectorFailures: [],
+        allFailed: false,
+        shouldRedirect: true,
+      })
+    })
+
+    it('does not redirect while some directors in the batch still failed', () => {
+      const failedAttempts = [{ director: 'site-c', message: 'Authentication failed' }]
+
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: ['bareos-dir'],
+        failedAttempts,
+      })).toEqual({
+        finalDirector: 'bareos-dir',
+        remainingDirectorFailures: failedAttempts,
+        allFailed: false,
+        shouldRedirect: false,
+      })
+    })
+
+    it('reports allFailed and skips redirect when every director failed', () => {
+      const failedAttempts = [
+        { director: 'bareos-dir', message: 'Connection error' },
+        { director: 'site-b', message: 'Connection error' },
+      ]
+
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: [],
+        failedAttempts,
+      })).toEqual({
+        finalDirector: '',
+        remainingDirectorFailures: failedAttempts,
+        allFailed: true,
+        shouldRedirect: false,
+      })
+    })
+
+    it('defaults to empty inputs without throwing', () => {
+      expect(planMultiDirectorLoginOutcome()).toEqual({
+        finalDirector: '',
+        remainingDirectorFailures: [],
+        allFailed: true,
+        shouldRedirect: false,
+      })
+    })
   })
 })

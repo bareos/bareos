@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+import { messageId } from '../i18n/messageId.js'
+
 export function buildLabelBarcodesCommand({
   storage,
   pool,
@@ -74,7 +76,7 @@ export function buildImportCommand({
 }
 
 export function formatInDriveLabel(translate, drive) {
-  const key = 'in drive {drive}'
+  const key = messageId('in drive {drive}')
   const label = translate(key, { drive })
   return label === key ? `in drive ${drive}` : label
 }

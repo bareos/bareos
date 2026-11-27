@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-mariadb-dump"
+  Description = "Smoke-test fileset backed by the bpipe plugin (MariaDB dump-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/mariadb-dump-demo/dump.sql"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

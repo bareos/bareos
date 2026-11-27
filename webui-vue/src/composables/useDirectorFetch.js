@@ -100,6 +100,7 @@ export function normaliseJob(j) {
     id:        Number(j.jobid ?? j.id),
     name:      j.name       ?? '',
     client:    j.client     ?? j.clientname ?? '',
+    fileset:   j.fileset    ?? '',
     type:      j.jobtype    ?? j.type       ?? '',
     level:     j.joblevel   ?? j.level      ?? '',
     status:    j.jobstatus  ?? j.status     ?? '',
@@ -109,6 +110,7 @@ export function normaliseJob(j) {
     files:     Number(j.jobfiles   ?? j.files   ?? 0),
     bytes:     Number(j.jobbytes   ?? j.bytes   ?? 0),
     errors:    Number(j.joberrors  ?? j.errors  ?? 0),
+    comment:   j.comment    ?? '',
   }
 }
 
@@ -139,6 +141,18 @@ export function isRunningJobStatus(status) {
 
 export function isWaitingJobStatus(status) {
   return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+}
+
+export function isErrorJobStatus(status) {
+  return status === 'E' || status === 'f'
+}
+
+export function isWarningJobStatus(status) {
+  return status === 'W'
+}
+
+export function isOkJobStatus(status) {
+  return status === 'T' || status === 'OK'
 }
 
 /**
@@ -266,5 +280,6 @@ export function normaliseVolume(v) {
     retention:   v.volretention ?? v.VolRetention ?? '',
     slot:        Number(v.slot ?? v.Slot ?? 0),
     enabled:     v.enabled !== '0' && v.enabled !== false,
+    comment:     v.comment ?? v.Comment ?? '',
   }
 }

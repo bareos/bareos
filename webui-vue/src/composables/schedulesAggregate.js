@@ -24,6 +24,7 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
@@ -186,7 +187,31 @@ export function buildStatusSchedules(statusResponse, showResponse, showAllRespon
   )
 }
 
-export async function fetchAggregatedSchedulesShow(credentials, directors) {
+const schedulesShowCache = createTtlCache()
+const CACHE_TTL_MS = 60_000
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    session: hashCacheFingerprint(credentials?.password),
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearSchedulesShowCache() {
+  schedulesShowCache.clear()
+}
+
+export async function fetchAggregatedSchedulesShow(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  if (!forceRefresh) {
+    const cached = schedulesShowCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
+  }
+  const fetchGeneration = schedulesShowCache.beginFetch()
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [showResponse, scheduleStateResponse] = await Promise.all([
       client.call('show schedules'),
@@ -197,10 +222,12 @@ export async function fetchAggregatedSchedulesShow(credentials, directors) {
     }
   })
 
-  return {
+  const data = {
     schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
   }
+  schedulesShowCache.set(cacheKey, data, fetchGeneration)
+  return data
 }
 
 export async function fetchAggregatedSchedulesStatus(credentials, directors, range) {

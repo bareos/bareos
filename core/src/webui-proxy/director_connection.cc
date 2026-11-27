@@ -552,7 +552,9 @@ void DirectorConnection::Disconnect()
 
 DirectorPrompt DirectorConnection::CallStreamed(
     const std::string& command,
-    const std::function<void(std::string_view)>& on_data)
+    const std::function<void(std::string_view)>& on_data,
+    const std::function<void()>& on_selection_start,
+    const std::function<void()>& on_selection_end)
 {
   assert(fd_ >= 0);
   if (json_mode_) { DrainPendingInput(); }
@@ -584,14 +586,33 @@ DirectorPrompt DirectorConnection::CallStreamed(
       if (signal == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
       if (signal == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
       if (signal == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
+      if (signal == BNET_START_SELECT) {
+        if (on_selection_start) { on_selection_start(); }
+        continue;
+      }
+      if (signal == BNET_END_SELECT) {
+        if (on_selection_end) { on_selection_end(); }
+        continue;
+      }
       if (signal == BNET_START_RTREE || signal == BNET_END_RTREE) { continue; }
+      if (signal == BNET_INFO_MSG || signal == BNET_WARNING_MSG
+          || signal == BNET_ERROR_MSG) {
+        // Because this session advertises color support, the director
+        // precedes InfoMsg()/WarningMsg()/ErrorMsg() text with a message-type
+        // signal (see UaContext::vSendMsg()). These are just type tags for
+        // the data that follows, not command-completion markers, so they
+        // must not be mistaken for the end of the response (e.g. the
+        // "Building directory tree..." message emitted while auto-selecting
+        // a restore job).
+        continue;
+      }
       if (signal == BNET_EOD || signal == BNET_EOD_POLL
           || signal == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the
         // follow-up prompt text ("cwd is: /\n$ "). Wait briefly so that prompt
         // transition data stays attached to the command that triggered it.
         if (HasPendingInput(50)) { continue; }
-        if (received_data) { return DirectorPrompt::Other; }
+        return DirectorPrompt::Other;
       } else if (received_data) {
         return DirectorPrompt::Other;
       }

@@ -1950,8 +1950,8 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
-apachectl graceful &> /dev/null || true
 %endif
+apachectl graceful &> /dev/null || true
 %logging_end
 
 %posttrans webui

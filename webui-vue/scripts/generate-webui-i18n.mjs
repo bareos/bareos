@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,66 +19,32 @@
    02110-1301, USA.
  */
 
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 export const projectRoot = path.resolve(scriptDir, '..')
-export const repositoryRoot = path.resolve(projectRoot, '..')
-export const loginFormPath = path.join(
-  repositoryRoot,
-  'webui',
-  'module',
-  'Auth',
-  'src',
-  'Auth',
-  'Form',
-  'LoginForm.php'
-)
-export const legacyLanguageDir = path.join(
-  repositoryRoot,
-  'webui',
-  'module',
-  'Application',
-  'language'
-)
 export const sourceDir = path.join(projectRoot, 'src')
-export const generatedLocalesPath = path.join(
-  sourceDir,
-  'generated',
-  'webui-locales.js'
-)
-export const generatedMessagesPath = path.join(
-  sourceDir,
-  'generated',
-  'webui-messages.js'
-)
-
-const AGPL_HEADER = `/*
-   BAREOS® - Backup Archiving REcovery Open Sourced
-
-   Copyright (C) 2026 Bareos GmbH & Co. KG
-
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
- */
-`
+export const localesDir = path.join(sourceDir, 'i18n', 'locales')
+export const localeManifestPath = path.join(localesDir, 'locales.json')
 
 function readUtf8(filePath) {
   return readFileSync(filePath, 'utf8')
+}
+
+function readJson(filePath) {
+  try {
+    return JSON.parse(readUtf8(filePath))
+  } catch (error) {
+    throw new Error(`Invalid JSON in ${path.relative(projectRoot, filePath)}: ${error.message}`)
+  }
 }
 
 function walkFiles(root, predicate, result = []) {
@@ -86,193 +52,203 @@ function walkFiles(root, predicate, result = []) {
     const entryPath = path.join(root, entry)
     const stats = statSync(entryPath)
     if (stats.isDirectory()) {
-      walkFiles(entryPath, predicate, result)
+      if (entryPath !== localesDir && !entryPath.includes(`${path.sep}generated${path.sep}`)) {
+        walkFiles(entryPath, predicate, result)
+      }
       continue
     }
-    if (predicate(entryPath)) {
-      result.push(entryPath)
-    }
+    if (predicate(entryPath)) result.push(entryPath)
   }
   return result
-}
-
-function escapeJavaScriptSingleQuotedString(value) {
-  return value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")
-}
-
-function parsePhpDoubleQuotedString(value) {
-  return JSON.parse(value.replace(/\\"/g, '\\"'))
-}
-
-function parsePoQuotedString(line) {
-  return JSON.parse(line.trim())
 }
 
 function parseJavaScriptStringLiteral(literal) {
   return Function(`"use strict"; return (${literal});`)()
 }
 
-export function readLegacyLocales(filePath = loginFormPath) {
-  const source = readUtf8(filePath)
-  const locales = []
-  const matches = source.matchAll(
-    /\$locales\['([^']+)'\]\s*=\s*("(?:\\.|[^"])*");/g
-  )
-
-  for (const match of matches) {
-    locales.push({
-      value: match[1],
-      label: parsePhpDoubleQuotedString(match[2]),
-    })
+function collectLiteralMatches(source, pattern, messages) {
+  for (const match of source.matchAll(pattern)) {
+    const value = parseJavaScriptStringLiteral(`${match[1]}${match[2]}${match[1]}`)
+    if (value) messages.add(value)
   }
-
-  return locales
 }
 
-function appendPoValue(entry, target, line) {
-  entry[target] += parsePoQuotedString(line)
-}
-
-export function parsePoCatalog(filePath) {
-  const lines = readUtf8(filePath).split(/\r?\n/)
-  const entries = new Map()
-  let current = null
-  let currentField = null
-
-  function finishEntry() {
-    if (!current || current.msgid === '') {
-      current = null
-      currentField = null
-      return
-    }
-
-    entries.set(current.msgid, current.msgstr || current.msgid)
-    current = null
-    currentField = null
-  }
-
-  for (const line of lines) {
-    if (line.startsWith('msgid ')) {
-      finishEntry()
-      current = { msgid: parsePoQuotedString(line.slice(6)), msgstr: '' }
-      currentField = 'msgid'
-      continue
-    }
-
-    if (line.startsWith('msgstr ')) {
-      current ??= { msgid: '', msgstr: '' }
-      current.msgstr = parsePoQuotedString(line.slice(7))
-      currentField = 'msgstr'
-      continue
-    }
-
-    if (line.startsWith('"') && current && currentField) {
-      appendPoValue(current, currentField, line)
-      continue
-    }
-
-    if (line.trim() === '') {
-      finishEntry()
-    }
-  }
-
-  finishEntry()
-  return entries
+function compareMessageIds(left, right) {
+  if (left < right) return -1
+  if (left > right) return 1
+  return 0
 }
 
 export function collectVueMessageIds(root = sourceDir) {
-  const files = walkFiles(
-    root,
-    (entryPath) =>
-      /\.(js|vue)$/.test(entryPath)
-      && !entryPath.includes(`${path.sep}generated${path.sep}`)
-  ).sort()
-
-  const messageIds = new Set()
-  const literalPattern = /(?:^|[^\w$.])(?:t|translate)\(\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g
+  const files = walkFiles(root, entryPath => /\.(js|vue)$/.test(entryPath)).sort()
+  const messages = new Set()
 
   for (const filePath of files) {
     const source = readUtf8(filePath)
-    for (const match of source.matchAll(literalPattern)) {
-      const quote = match[1]
-      const value = match[2]
-      messageIds.add(parseJavaScriptStringLiteral(`${quote}${value}${quote}`))
+    collectLiteralMatches(
+      source,
+      /(?:^|[^\w$.])(?:t|translate|messageId)\(\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g,
+      messages,
+    )
+
+    // Existing data structures predate messageId(). Keep their user-facing
+    // metadata discoverable while they are migrated to explicit markers.
+    collectLiteralMatches(
+      source,
+      /\b(?:label|labelKey|description|defaultTitle|category|headerTitle)\s*:\s*(["'])((?:\\.|(?!\1).)*)\1/g,
+      messages,
+    )
+  }
+
+  messages.delete('/')
+  return [...messages].sort(compareMessageIds)
+}
+
+export function readLocaleManifest(filePath = localeManifestPath) {
+  const manifest = readJson(filePath)
+  if (
+    typeof manifest?.default !== 'string'
+    || !Array.isArray(manifest.locales)
+    || manifest.locales.some(locale => (
+      typeof locale?.value !== 'string' || typeof locale?.label !== 'string'
+    ))
+  ) {
+    throw new Error('src/i18n/locales/locales.json has an invalid structure')
+  }
+
+  const localeNames = manifest.locales.map(locale => locale.value)
+  if (!localeNames.includes(manifest.default)) {
+    throw new Error(`Default locale "${manifest.default}" is not listed`)
+  }
+  if (new Set(localeNames).size !== localeNames.length) {
+    throw new Error('src/i18n/locales/locales.json contains duplicate locales')
+  }
+  return manifest
+}
+
+export function catalogPath(locale) {
+  return path.join(localesDir, `${locale}.json`)
+}
+
+function sortedCatalog(messageIds, existing, sourceLocale) {
+  return Object.fromEntries(messageIds.map(messageId => [
+    messageId,
+    sourceLocale ? messageId : (existing[messageId] ?? ''),
+  ]))
+}
+
+function catalogSource(catalog) {
+  return `${JSON.stringify(catalog, null, 2)}\n`
+}
+
+function placeholders(message) {
+  return [...String(message).matchAll(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g)]
+    .map(match => match[1])
+    .sort()
+}
+
+function validateTranslation(locale, messageId, translation) {
+  if (typeof translation !== 'string') {
+    return `${locale}: "${messageId}" must have a string value`
+  }
+  if (!translation) return null
+
+  const expected = placeholders(messageId)
+  const actual = placeholders(translation)
+  if (JSON.stringify(expected) !== JSON.stringify(actual)) {
+    return `${locale}: "${messageId}" has placeholders {${actual.join(', ')}}; expected {${expected.join(', ')}}`
+  }
+  return null
+}
+
+export function buildExpectedCatalogs() {
+  const manifest = readLocaleManifest()
+  const messageIds = collectVueMessageIds()
+  const catalogs = {}
+
+  for (const { value: locale } of manifest.locales) {
+    const filePath = catalogPath(locale)
+    const existing = existsSync(filePath) ? readJson(filePath) : {}
+    catalogs[locale] = sortedCatalog(messageIds, existing, locale === manifest.default)
+  }
+
+  return { manifest, messageIds, catalogs }
+}
+
+export function validateCatalogs({ manifest, messageIds, catalogs }) {
+  const errors = []
+  const expectedKeys = JSON.stringify(messageIds)
+  const expectedFiles = new Set([
+    'locales.json',
+    'catalogs.js',
+    ...manifest.locales.map(locale => `${locale.value}.json`),
+  ])
+
+  for (const entry of readdirSync(localesDir)) {
+    if (entry.endsWith('.json') && !expectedFiles.has(entry)) {
+      errors.push(`Unexpected locale file: src/i18n/locales/${entry}`)
     }
   }
 
-  return [...messageIds].sort((left, right) => left.localeCompare(right))
-}
-
-export function buildWebUiMessages(locales, vueMessageIds, languageDir = legacyLanguageDir) {
-  const messages = {}
-
-  for (const { value: locale } of locales) {
-    const catalogPath = path.join(languageDir, `${locale}.po`)
-    const catalogEntries = parsePoCatalog(catalogPath)
-    const catalog = Object.fromEntries(catalogEntries)
-
-    for (const msgid of vueMessageIds) {
-      if (!(msgid in catalog)) {
-        catalog[msgid] = msgid
+  for (const { value: locale } of manifest.locales) {
+    const catalog = catalogs[locale]
+    if (JSON.stringify(Object.keys(catalog)) !== expectedKeys) {
+      errors.push(`${locale}.json keys do not match the extracted source messages`)
+    }
+    for (const messageId of messageIds) {
+      const error = validateTranslation(locale, messageId, catalog[messageId])
+      if (error) errors.push(error)
+      if (locale === manifest.default && catalog[messageId] !== messageId) {
+        errors.push(`${locale}: source value for "${messageId}" must equal its key`)
       }
     }
+  }
+  return errors
+}
 
-    messages[locale] = catalog
+export function updateJsonCatalogs() {
+  const expected = buildExpectedCatalogs()
+  for (const { value: locale } of expected.manifest.locales) {
+    writeFileSync(catalogPath(locale), catalogSource(expected.catalogs[locale]))
+  }
+  return expected
+}
+
+export function checkJsonCatalogs() {
+  const expected = buildExpectedCatalogs()
+  const errors = validateCatalogs(expected)
+
+  for (const { value: locale } of expected.manifest.locales) {
+    const filePath = catalogPath(locale)
+    if (!existsSync(filePath)) {
+      errors.push(`Missing locale file: src/i18n/locales/${locale}.json`)
+      continue
+    }
+    if (readUtf8(filePath) !== catalogSource(expected.catalogs[locale])) {
+      errors.push(`src/i18n/locales/${locale}.json is not synchronized; run npm run update:i18n`)
+    }
   }
 
-  return messages
+  if (errors.length) throw new Error(errors.join('\n'))
+  return expected
 }
 
-export function buildWebUiLocalesSource(locales) {
-  const localeItems = locales
-    .map(
-      ({ value, label }) =>
-        `  { value: '${escapeJavaScriptSingleQuotedString(value)}', label: '${escapeJavaScriptSingleQuotedString(label)}' },`
-    )
-    .join('\n')
-
-  return `${AGPL_HEADER}
-// Generated from the legacy PHP WebUI locale list.
-
-export const DEFAULT_WEBUI_LOCALE = 'en_EN'
-
-export const WEBUI_LOCALES = [
-${localeItems}
-]
-`
-}
-
-export function buildWebUiMessagesSource(messages) {
-  return `${AGPL_HEADER}
-// Generated from the legacy PHP WebUI catalogs and Vue literal msgids.
-
-export const WEBUI_MESSAGES = ${JSON.stringify(messages, null, 2)}
-`
-}
-
+// Compatibility for callers of the previous generator API.
 export function generateWebUiI18n() {
-  const locales = readLegacyLocales()
-  const vueMessageIds = collectVueMessageIds()
-  const messages = buildWebUiMessages(locales, vueMessageIds)
-
-  return {
-    locales,
-    vueMessageIds,
-    messages,
-    localesSource: buildWebUiLocalesSource(locales),
-    messagesSource: buildWebUiMessagesSource(messages),
-  }
+  return buildExpectedCatalogs()
 }
 
-export function writeGeneratedWebUiI18n() {
-  const generated = generateWebUiI18n()
-
-  writeFileSync(generatedLocalesPath, generated.localesSource)
-  writeFileSync(generatedMessagesPath, generated.messagesSource)
-
-  return generated
-}
-
+const command = process.argv[2] ?? '--write'
 if (import.meta.url === `file://${process.argv[1]}`) {
-  writeGeneratedWebUiI18n()
+  if (command === '--check') {
+    const { messageIds, manifest } = checkJsonCatalogs()
+    console.log(`Checked ${messageIds.length} messages in ${manifest.locales.length} locales.`)
+  } else if (command === '--write') {
+    const updated = updateJsonCatalogs()
+    const errors = validateCatalogs(updated)
+    if (errors.length) throw new Error(errors.join('\n'))
+    console.log(`Updated ${updated.messageIds.length} messages in ${updated.manifest.locales.length} locales.`)
+  } else {
+    throw new Error(`Unknown argument: ${command}`)
+  }
 }

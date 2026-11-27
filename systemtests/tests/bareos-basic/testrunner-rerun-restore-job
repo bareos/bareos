@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Rerun a restore job. The director cannot reschedule restore jobs, so it
+# has to say so instead of silently doing nothing.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+backup_log=$tmp/rerun-restore-backup.out
+rerun_log=$tmp/rerun-restore.out
+JobName=backup-bareos-fd
+
+rm -f "$backup_log" "$rerun_log"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $backup_log
+setdebug level=100 storage=File
+run job=$JobName yes
+wait
+messages
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+restore_jobid=$(last_jobid_or_zero)
+print_debug "restore jobid is ${restore_jobid}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $rerun_log
+rerun jobid=${restore_jobid} yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Cannot rerun jobid ${restore_jobid}: Restore jobs cannot be rerun." \
+  "$rerun_log" \
+  "Rerun of a restore job was not refused."
+
+expect_not_grep "rerunning jobid ${restore_jobid}" \
+  "$rerun_log" \
+  "Rerun of a restore job pretended to reschedule the job."
+
+jobid_after_rerun=$(last_jobid_or_zero)
+if [ "${jobid_after_rerun}" != "${restore_jobid}" ]; then
+  set_error "Rerun of restore job ${restore_jobid} scheduled job ${jobid_after_rerun}."
+fi
+
+end_test

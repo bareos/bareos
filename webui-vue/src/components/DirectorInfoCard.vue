@@ -24,7 +24,6 @@
       <span>{{ t('Director Info') }}</span>
       <q-space />
       <span class="text-white text-caption q-mr-sm panel-refresh-countdown">
-        <span aria-hidden="true">↻</span>
         <span class="panel-refresh-countdown__value">{{ statusCountdown }}s</span>
       </span>
       <q-btn
@@ -33,6 +32,8 @@
         dense
         icon="refresh"
         color="white"
+        :title="t('Refresh')"
+        :aria-label="t('Refresh')"
         :loading="statusLoading"
         @click="emit('refresh')"
       />
@@ -115,6 +116,7 @@
           </q-chip>
           <q-chip
             v-if="card.binary_info"
+            data-testid="director-binary-info"
             dense
             square
             class="director-info-chip"

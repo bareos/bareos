@@ -9,6 +9,34 @@ Alias /favicon.ico @WEBUI_VUE_DIR@/favicon.ico
     Options FollowSymLinks
     AllowOverride None
     Require all granted
+
+    # SPA routing: redirect all non-file requests to index.html
+    <IfModule mod_rewrite.c>
+        RewriteEngine on
+        RewriteBase /bareos-webui-new
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.html [L]
+    </IfModule>
+
+    # index.html references the current build's content-hashed asset
+    # filenames, so it must always be revalidated: caching it would let a
+    # browser/proxy keep serving a stale index.html after a redeploy,
+    # pointing at asset filenames that no longer exist (404s).
+    <IfModule mod_headers.c>
+        <FilesMatch "^index\.html$">
+            Header set Cache-Control "no-cache, must-revalidate"
+        </FilesMatch>
+    </IfModule>
+</Directory>
+
+# Every file under assets/ is content-hashed by the Vite build, so a given
+# filename's content never changes -- safe to cache indefinitely, unlike
+# index.html above.
+<Directory @WEBUI_VUE_DIR@/assets>
+    <IfModule mod_headers.c>
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </IfModule>
 </Directory>
 
 <Location /bareos-webui-new>
