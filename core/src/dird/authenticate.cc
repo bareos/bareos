@@ -33,6 +33,8 @@
 #include "dird.h"
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
+#include "lib/bauth.h"
+#include "lib/connect_accept.h"
 #include "lib/default_console.h"
 #include "lib/hello.h"
 #include "lib/s_password.h"
@@ -51,6 +53,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/bauth/cram_md5.h"
 
 #include <array>
 
@@ -131,8 +134,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
-                                     std::string_view name)
+auth::InboundAuthenticator* DirectorAuth::get_authenticator_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   char tbuf[MAX_TIME_LENGTH];
   bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL));
@@ -163,11 +167,10 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         return nullptr;
       }
 
-      auto& data = client.emplace();
-      data.res = res;
+      auto& data = client.emplace(res, Md5InboundAuthenticator(*res));
 
       type = inbound_type::Client;
-      return res;
+      return &data.auth;
     } break;
     case global_resource::Type::Console: {
       Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
@@ -186,13 +189,14 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         return nullptr;
       }
 
-      auto& data = console.emplace();
+      ConsoleConnectionLease lease;
+
       auto num_leases = ConsoleConnectionLease::get_num_leases();
 
-      data.is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
+      bool is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
 
       if (num_leases > myself->MaxConsoleConnections) {
-        if (data.is_default) {
+        if (is_default) {
           Emsg0(M_INFO, 0,
                 T_("Number of console connections exceeded "
                    "Maximum :%u, Current: %" PRIuz "\n"),
@@ -206,21 +210,25 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         }
       }
 
-      data.res = res;
+      const TlsResource* tls;
 
-      if (data.is_default) {
+      if (is_default) {
         /* while the default console has a console resource, for some reason
          * it does not have the correct tls settings; instead of using the
          * directors tls settings, it is set up with some kind of default tls
          * settings.  As such we need to use the tls settings of the director
          * explicitly. */
-        data.tls = *myself;
+        tls = myself;
       } else {
-        data.tls = *res;
+        tls = res;
       }
 
+      auto& data = console.emplace(res, std::move(lease),
+                                   Md5InboundAuthenticator(*tls),
+                                   is_default, *tls);
       type = inbound_type::Console;
-      return &data.tls;
+
+      return &data.auth;
     } break;
     default: {
     }

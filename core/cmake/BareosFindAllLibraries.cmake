@@ -151,11 +151,6 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
-option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
-if(ENABLE_JANSSON)
-  find_package(Jansson REQUIRED)
-endif()
-
 if(lmdb)
   option(USE_SYSTEM_LMDB
          "Use the system LMDB library instead of the bundled version" OFF

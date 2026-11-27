@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 
 #include "include/bareos.h"
 #include "lib/bstringlist.h"
+#include "lib/bauth.h"
 
 class JobControlRecord;
 class BareosSocket;
@@ -32,7 +33,8 @@ namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                                 utime_t heart_beat,
                                 BStringList& response_args,
-                                uint32_t& response_id);
+                                uint32_t& response_id,
+                                auth::OutboundAuthenticator* auth);
 } /* namespace console  */
 
 #endif  // BAREOS_CONSOLE_CONNECT_TO_DIRECTOR_H_

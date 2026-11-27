@@ -80,6 +80,9 @@ class TlsOpenSsl : public Tls {
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) override;
+  int TlsBsockPeekn(const BareosSocket* bsock,
+                    char* ptr,
+                    int32_t nbytes) override;
   void TlsBsockShutdown(BareosSocket* bsock) override;
 
   std::string TlsCipherGetName() const override;
@@ -418,7 +421,7 @@ unsigned int psk_server_cb(SSL* ssl,
   }
 
   // , std::span<unsigned char>(psk_output, max_psk_len)
-  auto* tls_res = data->get(type, name);
+  auto* tls_res = data->get_tls_config_for(type, name);
 
   if (!tls_res) { return ERROR_RETURN; }
 
@@ -758,6 +761,31 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
   return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
 
+int TlsOpenSsl::TlsBsockPeekn(const BareosSocket*, char* ptr, int32_t nbytes)
+{
+  if (!openssl_) {
+    Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
+    return 0;
+  }
+
+  auto ret = SSL_peek(openssl_.get(), ptr, nbytes);
+  if (ret > 0) { return ret; }
+
+  auto err = SSL_get_error(openssl_.get(), ret);
+  switch (err) {
+    case SSL_ERROR_WANT_READ:
+      [[fallthrough]];
+    case SSL_ERROR_WANT_WRITE: {
+      return 0;  // the caller should retry
+    } break;
+    default: {
+      LogSSLError(err);
+      // ret may be 0, so just return -1
+      return -1;
+    }
+  }
+}
+
 bool TlsOpenSsl::KtlsSendStatus()
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
@@ -1060,7 +1088,6 @@ void print_options(const TlsResource* res)
   Dmsg1(100, "Set dhfile_:\t<%s>\n", cert.dhfile_.c_str());
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", as_str(cert.verify_peer_).c_str());
 }
-
 };  // namespace
 
 std::unique_ptr<Tls> make_openssl_server_tls(const TlsResource* res,

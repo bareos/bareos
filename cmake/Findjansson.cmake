@@ -16,7 +16,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #[=======================================================================[.rst:
-FindJansson
+Findjansson
 -----------
 
 Find Jansson headers and libraries.
@@ -26,7 +26,7 @@ IMPORTED Targets
 
 The following :prop_tgt:`IMPORTED` targets may be defined:
 
-``Jansson::Jansson``
+``jansson::jansson``
   Jansson library.
 
 Result variables
@@ -40,7 +40,7 @@ This module will set the following variables in your project:
   Where to find jansson.h.
 ``JANSSON_LIBRARIES``
   List of libraries when using Jansson.
-``JANSSON_VERSION_STRING``
+``JANSSON_VERSION``
   The version of Jansson found.
 ``HAVE_JANSSON``
   1 if Jansson found.
@@ -89,14 +89,14 @@ else()
 endif()
 
 if(PC_JANSSON_VERSION)
-  set(JANSSON_VERSION_STRING ${PC_JANSSON_VERSION})
+  set(JANSSON_VERSION ${PC_JANSSON_VERSION})
 endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
-  Jansson
+  jansson
   REQUIRED_VARS JANSSON_LIBRARY JANSSON_INCLUDE_DIR
-  VERSION_VAR JANSSON_VERSION_STRING
+  VERSION_VAR JANSSON_VERSION
 )
 
 if(JANSSON_FOUND)
@@ -107,38 +107,38 @@ endif()
 
 mark_as_advanced(JANSSON_INCLUDE_DIR JANSSON_LIBRARY)
 
-if(JANSSON_FOUND AND NOT TARGET Jansson::Jansson)
-  add_library(Jansson::Jansson SHARED IMPORTED)
+if(JANSSON_FOUND AND NOT TARGET jansson::jansson)
+  add_library(jansson::jansson SHARED IMPORTED)
   set_target_properties(
-    Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+    jansson::jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                 "${JANSSON_INCLUDE_DIRS}"
   )
   set_target_properties(
-    Jansson::Jansson PROPERTIES INTERFACE_COMPILE_OPTIONS
+    jansson::jansson PROPERTIES INTERFACE_COMPILE_OPTIONS
                                 "${JANSSON_DEFINITIONS}"
   )
   set_property(
-    TARGET Jansson::Jansson
+    TARGET jansson::jansson
     APPEND
     PROPERTY IMPORTED_LOCATION "${JANSSON_LIBRARY}"
   )
   if(JANSSON_LIBRARY_DEBUG)
     set_property(
-      TARGET Jansson::Jansson
+      TARGET jansson::jansson
       APPEND
       PROPERTY IMPORTED_LOCATION_DEBUG "${JANSSON_LIBRARY_DEBUG}"
     )
   endif()
   if(JANSSON_IMPLIB)
     set_property(
-      TARGET Jansson::Jansson
+      TARGET jansson::jansson
       APPEND
       PROPERTY IMPORTED_IMPLIB "${JANSSON_IMPLIB}"
     )
   endif()
   if(JANSSON_IMPLIB_DEBUG)
     set_property(
-      TARGET Jansson::Jansson
+      TARGET jansson::jansson
       APPEND
       PROPERTY IMPORTED_IMPLIB_DEBUG "${JANSSON_IMPLIB_DEBUG}"
     )

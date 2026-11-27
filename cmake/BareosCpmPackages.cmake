@@ -105,6 +105,18 @@ if(xxHash_ADDED)
   endif()
 endif()
 
+CPMAddPackage(
+  NAME jansson
+  VERSION "2.11"
+  GITHUB_REPOSITORY akheron/jansson
+  GIT_TAG v2.15.1
+  OPTIONS "JANSSON_EXAMPLES OFF" "JANSSON_BUILD_DOCS OFF"
+          "JANSSON_WITHOUT_TESTS ON" "JANSSON_INSTALL OFF"
+          "JANSSON_BUILD_SHARED_LIBS OFF" "JANSSON_COVERAGE OFF"
+)
+
+set(HAVE_JANSSON 1)
+
 # Dump package information from CPM into a YAML file
 file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
      "# List of packages provided by CPM\n" "---\n"
