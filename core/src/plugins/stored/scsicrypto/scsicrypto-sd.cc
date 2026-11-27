@@ -108,6 +108,7 @@ static PluginFunctions pluginFuncs
        getPluginValue, setPluginValue, handlePluginEvent};
 
 static int const debuglevel = 200;
+static int const tracelevel = 1000;
 
 #ifdef __cplusplus
 extern "C" {
@@ -284,7 +285,7 @@ static bRC do_set_scsi_encryption_key(void* value)
   DeviceResource* device_resource;
   DirectorResource* director;
   char StoredVolEncrKey[MAX_NAME_LENGTH];
-  char VolEncrKey[MAX_NAME_LENGTH];
+  char VolEncrKey[MAX_NAME_LENGTH]{};
 
   // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
@@ -349,7 +350,8 @@ static bRC do_set_scsi_encryption_key(void* value)
                                  DEFAULT_PASSPHRASE_LENGTH / 8,
                                  (unsigned char*)WrappedVolEncrKey,
                                  (unsigned char*)VolEncrKey)) {
-        Dmsg1(1000, "scsicrypto-sd: Failed to unwrap encryption key using %s\n",
+        Dmsg1(tracelevel,
+              "scsicrypto-sd: Failed to unwrap encryption key using %s\n",
               director->keyencrkey.value);
         Emsg1(M_ERROR, 0,
               "scsicrypto-sd: Failed to unwrap encryption key, "
@@ -360,7 +362,8 @@ static bRC do_set_scsi_encryption_key(void* value)
     }
   }
 
-  Dmsg1(debuglevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
+  Dmsg0(debuglevel, "scsicrypto-sd: Loading new crypto key\n");
+  Dmsg1(tracelevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
 
   lock_mutex(crypto_operation_mutex);
   if (SetScsiEncryptionKey(dev->fd, dev->archive_device_string, VolEncrKey)) {
