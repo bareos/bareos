@@ -340,7 +340,7 @@ class Device {
   bool CanAppend() const { return BitIsSet(ST_APPENDREADY, state); }
   bool IsCryptoEnabled() const { return BitIsSet(ST_CRYPTOKEY, state); }
   bool IsCryptoStatusSynced() const { return crypto_status_synced_; }
-  void SetCryptoStatusSynced(bool synced) { crypto_status_synced_ = synced; }
+  void SetCryptoStatusSynced() { crypto_status_synced_ = true; }
 
   /* CanWrite() is meant for checking at the end of a job to see
    * if we still have a tape (perhaps not if at end of tape

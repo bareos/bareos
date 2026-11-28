@@ -311,14 +311,58 @@ expect_grep "Crypto cache read 1 entries" \
 
 check_restore_diff "${BackupDirectory}"
 
-# Verify bextract cleared the drive encryption key on Device::close()
+# Verify bextract cleared the drive encryption key on plugin unload
 assert_drive_crypto_modes Disabled Disabled after_bextract
+
+# Verify bSdEventDeviceClose clears the drive key when AlwaysOpen = No, and that
+# subsequent open + label verification reloads the key for append and restore.
+sed -i \
+  -e 's/Query Crypto Status = Yes/Query Crypto Status = No/g' \
+  -e 's/AlwaysOpen = Yes/AlwaysOpen = No/g' \
+  etc/bareos/bareos-sd.d/device/tape_devices.conf
+
+start_bareos
+reopen_backup_log="$tmp/${TestName}-reopen-backup.out"
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${reopen_backup_log}
+run job=backup-bareos-fd Level=Full pool=Full storage=Tape-0 spooldata=yes yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+expect_grep "Backup OK" \
+  "${reopen_backup_log}" \
+  "AlwaysOpen=No backup job failed."
+assert_drive_crypto_modes Disabled Disabled after_close_no_alwaysopen
+
+rm -rf "${restore_directory}"
+mkdir -p "${restore_directory}"
+reopen_restore_log="$tmp/${TestName}-reopen-restore.out"
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${reopen_restore_log}
+restore client=bareos-fd where=${restore_directory} select all done yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+expect_grep "Restore OK" \
+  "${reopen_restore_log}" \
+  "AlwaysOpen=No restore job failed."
+check_restore_diff "${BackupDirectory}"
+assert_drive_crypto_modes Disabled Disabled after_restore_no_alwaysopen
+
+stop_bareos
+sleep 1
+sed -i 's/AlwaysOpen = No/AlwaysOpen = Yes/g' \
+  etc/bareos/bareos-sd.d/device/tape_devices.conf
 
 # Verify stale drive key left across a bareos-sd restart is cleared even with
 # the default Query Crypto Status = No configuration before labeling an
 # unencrypted volume.
-sed -i 's/Query Crypto Status = Yes/Query Crypto Status = No/g' \
-  etc/bareos/bareos-sd.d/device/tape_devices.conf
 
 /usr/bin/mt -f "${ltodrive}" offline || :
 /usr/sbin/mtx -f "${changer}" unload "${slot}" 0 || :

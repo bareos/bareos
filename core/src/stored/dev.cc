@@ -82,7 +82,6 @@
 #include "lib/btimers.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
-#include "lib/scsi_crypto.h"
 
 #ifndef O_NONBLOCK
 #  define O_NONBLOCK 0
@@ -912,24 +911,6 @@ void Device::ClearVolhdr()
   setVolCatInfo(false);
 }
 
-static void ClearTapeCryptoOnClose(Device* dev)
-{
-  if (dev->device_type != DeviceType::B_TAPE_DEV) { return; }
-  if (!dev->device_resource || !dev->device_resource->drive_crypto_enabled) {
-    return;
-  }
-
-  const bool should_clear
-      = dev->IsCryptoEnabled()
-        || (dev->device_resource->query_crypto_status
-            && IsScsiEncryptionEnabled(dev->fd, dev->archive_device_string));
-  if (!should_clear) { return; }
-
-  if (ClearScsiEncryptionKey(dev->fd, dev->archive_device_string)) {
-    dev->ClearCryptoEnabled();
-  }
-}
-
 // Close the device.
 bool Device::close(DeviceControlRecord* dcr)
 {
@@ -944,8 +925,6 @@ bool Device::close(DeviceControlRecord* dcr)
           VolHdr.VolumeName);
     goto bail_out; /* already closed */
   }
-
-  ClearTapeCryptoOnClose(this);
 
   if (!norewindonclose) { OfflineOrRewind(); }
 

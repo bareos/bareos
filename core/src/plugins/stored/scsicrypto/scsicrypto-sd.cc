@@ -67,6 +67,9 @@
 #include "lib/scsi_crypto.h"
 #include "lib/base64.h"
 
+#include <set>
+#include <string>
+
 using namespace storagedaemon;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
@@ -110,6 +113,9 @@ static PluginFunctions pluginFuncs
 static int const debuglevel = 200;
 static int const tracelevel = 1000;
 
+static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
+static std::set<std::string> active_crypto_devices;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -140,7 +146,18 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 }
 
 // External entry point to unload the plugin
-BAREOS_EXPORT bRC unloadPlugin() { return bRC_OK; }
+BAREOS_EXPORT bRC unloadPlugin()
+{
+  lock_mutex(crypto_operation_mutex);
+  for (const auto& device_name : active_crypto_devices) {
+    Dmsg1(debuglevel, "scsicrypto-sd: Clearing crypto key on unload for %s\n",
+          device_name.c_str());
+    ClearScsiEncryptionKey(-1, device_name.c_str());
+  }
+  active_crypto_devices.clear();
+  unlock_mutex(crypto_operation_mutex);
+  return bRC_OK;
+}
 
 #ifdef __cplusplus
 }
@@ -176,6 +193,7 @@ static bRC newPlugin(PluginContext* ctx)
    *                         specific encryption key.
    * bSdEventLabelWrite - Write of volume label clear key as volume
    *                      labels are unencrypted.
+   * bSdEventDeviceClose - Close of device clear key
    * bSdEventVolumeUnload - Unload of volume clear key
    * bSdEventReadError - Read error on volume see if its due to
    *                     the fact encryption is enabled and we
@@ -186,9 +204,9 @@ static bRC newPlugin(PluginContext* ctx)
    * bSdEventVolumeStatus - plugin callback for encryption status
    *                        of the volume loaded in the drive. */
   bareos_core_functions->registerBareosEvents(
-      ctx, 7, bSdEventLabelRead, bSdEventLabelVerified, bSdEventLabelWrite,
-      bSdEventVolumeUnload, bSdEventReadError, bSdEventDriveStatus,
-      bSdEventVolumeStatus);
+      ctx, 8, bSdEventLabelRead, bSdEventLabelVerified, bSdEventLabelWrite,
+      bSdEventDeviceClose, bSdEventVolumeUnload, bSdEventReadError,
+      bSdEventDriveStatus, bSdEventVolumeStatus);
 
   return bRC_OK;
 }
@@ -226,6 +244,7 @@ static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
   switch (event->eventType) {
     case bSdEventLabelRead:
     case bSdEventLabelWrite:
+    case bSdEventDeviceClose:
     case bSdEventVolumeUnload:
       return do_clear_scsi_encryption_key(value);
     case bSdEventLabelVerified:
@@ -244,8 +263,6 @@ static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
 
   return bRC_OK;
 }
-
-static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static inline bool GetVolumeEncryptionKey(DeviceControlRecord* dcr,
                                           char* VolEncrKey)
@@ -368,7 +385,10 @@ static bRC do_set_scsi_encryption_key(void* value)
   lock_mutex(crypto_operation_mutex);
   if (SetScsiEncryptionKey(dev->fd, dev->archive_device_string, VolEncrKey)) {
     dev->SetCryptoEnabled();
-    dev->SetCryptoStatusSynced(true);
+    dev->SetCryptoStatusSynced();
+    if (dev->archive_device_string) {
+      active_crypto_devices.insert(dev->archive_device_string);
+    }
     unlock_mutex(crypto_operation_mutex);
     return bRC_OK;
   } else {
@@ -420,7 +440,10 @@ static bRC do_clear_scsi_encryption_key(void* value)
     Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
     if (ClearScsiEncryptionKey(dev->fd, dev->archive_device_string)) {
       dev->ClearCryptoEnabled();
-      dev->SetCryptoStatusSynced(true);
+      if (dev->IsOpen()) { dev->SetCryptoStatusSynced(); }
+      if (dev->archive_device_string) {
+        active_crypto_devices.erase(dev->archive_device_string);
+      }
       unlock_mutex(crypto_operation_mutex);
       return bRC_OK;
     } else {
@@ -428,7 +451,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
       return bRC_Error;
     }
   } else {
-    if (dev->IsOpen()) { dev->SetCryptoStatusSynced(true); }
+    if (dev->IsOpen()) { dev->SetCryptoStatusSynced(); }
     Dmsg0(debuglevel,
           "scsicrypto-sd: Not clearing crypto key because encryption is "
           "currently not enabled on drive\n");
