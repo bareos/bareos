@@ -360,6 +360,28 @@ sleep 1
 sed -i 's/AlwaysOpen = No/AlwaysOpen = Yes/g' \
   etc/bareos/bareos-sd.d/device/tape_devices.conf
 
+# Verify bareos-sd shutdown with AlwaysOpen = Yes (without releasing the volume
+# first) clears the active drive key via unloadPlugin() using the live fd.
+start_bareos
+rm -rf "${restore_directory}"
+mkdir -p "${restore_directory}"
+sd_stop_restore_log="$tmp/${TestName}-sd-stop-restore.out"
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${sd_stop_restore_log}
+restore client=bareos-fd where=${restore_directory} select all done yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+expect_grep "Restore OK" \
+  "${sd_stop_restore_log}" \
+  "AlwaysOpen=Yes restore before shutdown failed."
+stop_bareos
+sleep 1
+assert_drive_crypto_modes Disabled Disabled after_sd_stop_alwaysopen
+
 # Verify stale drive key left across a bareos-sd restart is cleared even with
 # the default Query Crypto Status = No configuration before labeling an
 # unencrypted volume.

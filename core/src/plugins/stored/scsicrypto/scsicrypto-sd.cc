@@ -68,7 +68,6 @@
 #include "lib/base64.h"
 
 #include <set>
-#include <string>
 
 using namespace storagedaemon;
 
@@ -114,7 +113,7 @@ static int const debuglevel = 200;
 static int const tracelevel = 1000;
 
 static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
-static std::set<std::string> active_crypto_devices;
+static std::set<DeviceResource*> active_crypto_devices;
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,10 +148,15 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 BAREOS_EXPORT bRC unloadPlugin()
 {
   lock_mutex(crypto_operation_mutex);
-  for (const auto& device_name : active_crypto_devices) {
-    Dmsg1(debuglevel, "scsicrypto-sd: Clearing crypto key on unload for %s\n",
-          device_name.c_str());
-    ClearScsiEncryptionKey(-1, device_name.c_str());
+  for (auto* res : active_crypto_devices) {
+    if (!res || !res->archive_device_string) { continue; }
+    const int fd = res->dev ? res->dev->fd : -1;
+    Dmsg2(debuglevel,
+          "scsicrypto-sd: Clearing crypto key on unload for %s (fd=%d)\n",
+          res->archive_device_string, fd);
+    if (ClearScsiEncryptionKey(fd, res->archive_device_string) && res->dev) {
+      res->dev->ClearCryptoEnabled();
+    }
   }
   active_crypto_devices.clear();
   unlock_mutex(crypto_operation_mutex);
@@ -386,9 +390,7 @@ static bRC do_set_scsi_encryption_key(void* value)
   if (SetScsiEncryptionKey(dev->fd, dev->archive_device_string, VolEncrKey)) {
     dev->SetCryptoEnabled();
     dev->SetCryptoStatusSynced();
-    if (dev->archive_device_string) {
-      active_crypto_devices.insert(dev->archive_device_string);
-    }
+    active_crypto_devices.insert(device_resource);
     unlock_mutex(crypto_operation_mutex);
     return bRC_OK;
   } else {
@@ -441,9 +443,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
     if (ClearScsiEncryptionKey(dev->fd, dev->archive_device_string)) {
       dev->ClearCryptoEnabled();
       if (dev->IsOpen()) { dev->SetCryptoStatusSynced(); }
-      if (dev->archive_device_string) {
-        active_crypto_devices.erase(dev->archive_device_string);
-      }
+      active_crypto_devices.erase(device_resource);
       unlock_mutex(crypto_operation_mutex);
       return bRC_OK;
     } else {
