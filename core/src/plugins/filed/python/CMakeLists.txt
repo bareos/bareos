@@ -150,17 +150,24 @@ set(PYFILES
     incus/bareos-fd-incus.py
 )
 
-include(CMakeDependentOption)
-cmake_dependent_option(
-  ENABLE_PROXMOX_PLUGIN
-  "Enable the filedaemon plugin for Proxmox VE"
-  ON
-  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DIST_VERSION_ID GREATER_EQUAL 12"
-  OFF
-)
-
 if(ENABLE_PROXMOX_PLUGIN)
   list(APPEND PYFILES proxmox/bareos-fd-proxmox.py)
+endif()
+
+if(ENABLE_PROXMOX_QMP_PLUGIN)
+  list(APPEND PYFILES proxmox-qmp/bareos-fd-proxmox-qmp.py
+       proxmox-qmp/proxmox_qmp_storage.py proxmox-qmp/proxmox_qmp_nbd.py
+  )
+  install(
+    PROGRAMS proxmox-qmp/bareos-proxmox-qmp.py
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
+  install(
+    PROGRAMS proxmox-qmp/bareos-qmp-tool.py
+    DESTINATION ${sbindir}
+    COMPONENT filedaemon
+  )
 endif()
 
 install(

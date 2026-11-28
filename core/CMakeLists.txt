@@ -602,6 +602,22 @@ bareos_configure_file(
 # work around this issue, we can simply tell msvc to parse macros correctly.
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/Zc:preprocessor>)
 
+include(CMakeDependentOption)
+cmake_dependent_option(
+  ENABLE_PROXMOX_PLUGIN
+  "Enable the filedaemon plugin for Proxmox VE"
+  ON
+  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DIST_VERSION_ID GREATER_EQUAL 13"
+  OFF
+)
+cmake_dependent_option(
+  ENABLE_PROXMOX_QMP_PLUGIN
+  "Enable the filedaemon QMP plugin for Proxmox VE 9"
+  ON
+  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DIST_VERSION_ID VERSION_EQUAL 13"
+  OFF
+)
+
 add_subdirectory(platforms)
 add_subdirectory(src)
 add_subdirectory(scripts)

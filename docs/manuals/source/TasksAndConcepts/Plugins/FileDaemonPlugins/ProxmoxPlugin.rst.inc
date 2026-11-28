@@ -41,9 +41,13 @@ the |proxmox ve| cluster members.
 ================== ========================
 Proxmox VE Version Bareos Repository to use
 ================== ========================
-8.x                Debian_12
 9.x                Debian_13
 ================== ========================
+
+Current packages are not provided for Proxmox VE 8.x (Debian 12), because
+Proxmox VE 8 reached end of life in August 2026 (see the
+`Proxmox VE FAQ <https://pve.proxmox.com/wiki/FAQ>`_).
+Older Bareos releases may still provide packages for it.
 
 Then install the package **bareos-filedaemon-proxmox-plugin** (using :command:`apt`)
 on one of the |proxmox ve| cluster members. This will automatically also
@@ -81,6 +85,7 @@ install the |fd| and other required packages:
 Configuration
 ^^^^^^^^^^^^^
 
+.. _ProxmoxFileDaemonRuntimeGroup:
 
 Switch the |fd| runtime group to  `root`
 ''''''''''''''''''''''''''''''''''''''''
