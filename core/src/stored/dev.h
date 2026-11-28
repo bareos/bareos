@@ -223,6 +223,7 @@ class Device {
   pthread_t pid_{};      /**< Thread that locked -- DEBUG only */
   bool unload_{false};   /**< Set when Volume must be unloaded */
   bool load_{false};     /**< Set when Volume must be loaded */
+  bool crypto_status_synced_{false}; /**< Live drive crypto state synced */
 
  public:
   Device() = default;
@@ -338,6 +339,8 @@ class Device {
   bool AtWeot() const { return BitIsSet(ST_WEOT, state); }
   bool CanAppend() const { return BitIsSet(ST_APPENDREADY, state); }
   bool IsCryptoEnabled() const { return BitIsSet(ST_CRYPTOKEY, state); }
+  bool IsCryptoStatusSynced() const { return crypto_status_synced_; }
+  void SetCryptoStatusSynced() { crypto_status_synced_ = true; }
 
   /* CanWrite() is meant for checking at the end of a job to see
    * if we still have a tape (perhaps not if at end of tape
@@ -389,7 +392,11 @@ class Device {
   void clear_offline() { ClearBit(ST_OFFLINE, state); }
   void ClearEot() { ClearBit(ST_EOT, state); }
   void ClearEof() { ClearBit(ST_EOF, state); }
-  void ClearOpened() { fd = -1; }
+  void ClearOpened()
+  {
+    fd = -1;
+    crypto_status_synced_ = false;
+  }
   void ClearMounted() { ClearBit(ST_MOUNTED, state); }
   void clear_media() { ClearBit(ST_MEDIA, state); }
   void ClearShortBlock() { ClearBit(ST_SHORT, state); }
