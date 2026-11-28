@@ -574,9 +574,46 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         run_command(f"qm stop {self.options.guestid}")
         run_command(f"qm wait {self.options.guestid}")
 
-    def _vm_is_running(self):
-        output = run_command(f"qm status {self.options.guestid}")
-        return "running" in output
+    def _get_vm_status(self):
+        guestid = self.options.guestid
+        cmd = ["qm", "status", str(guestid)]
+        bareosfd.DebugMessage(10, f"running command {' '.join(cmd)}\n")
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, errors="replace", check=False
+            )
+        except OSError as e:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"Could not run qm status for VM {guestid}: {e}\n"
+            )
+            return None
+
+        if result.returncode != 0:
+            details = result.stderr.strip() or result.stdout.strip()
+            message = f"qm status for VM {guestid} failed (exit {result.returncode})"
+            if details:
+                message += f": {details}"
+            diagnostic = details.lower()
+            if (
+                "permission denied" in diagnostic
+                or "unable to load access control list" in diagnostic
+            ):
+                message += "\nCheck the file daemon's permissions and Proxmox services."
+            bareosfd.JobMessage(bareosfd.M_FATAL, message + "\n")
+            return None
+
+        lines = result.stdout.strip().splitlines()
+        if (
+            len(lines) != 1
+            or not lines[0].startswith("status: ")
+            or not lines[0][8:].strip()
+        ):
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                f"Unexpected qm status output for VM {guestid}: {result.stdout!r}\n",
+            )
+            return None
+        return lines[0][8:].strip()
 
     def _ga_is_running(self):
         output = run_command(f"qm guest cmd {self.options.guestid} ping")
@@ -592,13 +629,22 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def _recreate_vm(self):
         if os.path.isfile(self._get_vmconf_path(self.options.guestid)):
             # vm already exists, stop it if running
-            if self._vm_is_running():
+            status = self._get_vm_status()
+            if status is None:
+                return bareosfd.bRC_Error
+            if status == "running":
                 self._stop_vm()
                 self.vm_was_running = True
+            elif status != "stopped":
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    f"Cannot restore VM {self.options.guestid}: unexpected status '{status}'.\n",
+                )
+                return bareosfd.bRC_Error
             # restore vm config file
             # self.vmconfig.save_by_id(self.options.guestid)
             self._lock_vm()
-            return
+            return bareosfd.bRC_OK
 
         bareosfd.DebugMessage(
             100, f"vm {self.options.guestid} does not exist, creating it\n"
@@ -631,6 +677,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vmconfig.parse_from_id(self.options.guestid)
 
         self._lock_vm()
+        return bareosfd.bRC_OK
 
     def _start_backup_config_ro(self, savepkt):
         """
@@ -664,10 +711,13 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.conffile = self._get_vmconf_path(guest_name)
 
         if self.vmconfig is None:
-            if not self._vm_is_running():
+            status = self._get_vm_status()
+            if status is None:
+                return bareosfd.bRC_Error
+            if status != "running":
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    f"vm {guest_name} does not exist or is not running.\n",
+                    f"VM {guest_name} is not running (status: {status}).\n",
                 )
                 return bareosfd.bRC_Error
 
@@ -872,7 +922,9 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     cmd = self._build_cmd("toimage")
                 else:
                     self.nbd_port = acquire_port(self.nbd_port)
-                    self._recreate_vm()
+                    if self._recreate_vm() != bareosfd.bRC_OK:
+                        release_port(self.nbd_port)
+                        return bareosfd.bRC_Error
                     self._prepare_nbd_restore()
                     cmd = self._build_cmd("restore")
 
