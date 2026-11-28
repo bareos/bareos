@@ -48,9 +48,9 @@ class PVEStorageConfig:
                     if current_storage is None:
                         raise ValueError("storage option found before storage type")
                     parts = line.split(None, 1)
-                    if len(parts) != 2:
-                        raise ValueError(f"invalid storage option: {line}")
-                    current_storage["options"][parts[0]] = parts[1].strip()
+                    current_storage["options"][parts[0]] = (
+                        parts[1].strip() if len(parts) == 2 else None
+                    )
                     continue
 
                 storage_type, separator, storage_id = line.partition(":")
@@ -112,7 +112,8 @@ class PVEStorageConfig:
         return monitors
 
     def _rbd_blockdev(self, node_name, storage_id, volume, options):
-        if options.get("krbd", "0").lower() in ("1", "yes", "true", "on"):
+        krbd = options.get("krbd", "0")
+        if krbd is None or krbd.lower() in ("1", "yes", "true", "on"):
             raise ValueError(
                 f"Ceph storage {storage_id} has krbd enabled; QSD restore "
                 "currently requires the librbd backend"
@@ -195,6 +196,8 @@ class PVEStorageConfig:
             backend_driver = "host_device"
             frontend_driver = "raw"
         elif "path" in options:
+            if not options["path"]:
+                raise ValueError(f"file-backed storage {storage_id} has no path")
             full_path = os.path.join(options["path"], "images", volume)
             backend_driver = "file"
             frontend_driver = self._file_format(volume)
